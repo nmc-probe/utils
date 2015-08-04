@@ -1,0 +1,17 @@
+function(doc) {
+  if (doc.type == 'slot') {
+    passed = true
+    info = {'bladeCommunicating': true,
+            'bladeInstalled': true}
+
+    for (var key in info) {
+      if(!doc[key]) {
+        passed = false
+      }
+    }
+
+    if (!passed) {
+      emit(doc._id, doc)
+    }
+  }
+}

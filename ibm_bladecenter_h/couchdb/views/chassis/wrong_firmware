@@ -1,0 +1,10 @@
+function(doc) {
+  if (doc.type == 'chassis') {
+    if (doc.isPingable && doc.collectedSNMP && doc.ammFirmware) {
+      expected = 'BPET66B'
+      if (doc.ammFirmware != expected) {
+        emit (doc._id, {'actual': doc.ammFirmware, 'expected': expected})
+      }
+    }
+  }
+}

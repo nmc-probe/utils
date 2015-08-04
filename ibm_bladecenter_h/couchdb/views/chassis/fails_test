@@ -1,0 +1,33 @@
+function(doc) {
+  if (doc.type == 'chassis') {
+    if (!(doc.isPingable && doc.collectedSNMP)) {
+      emit(doc.name, {'isPingable': doc.isPingable, 'collectedSNMP': doc.collectedSNMP})
+    } else {
+      failed = false
+      expected = {'switchModulesCommunicating': '1100000000',
+                  'healthSummarySeverity':      '',
+                  'powerModulesInstalled':      '1111',
+                  'switchModulesInstalled':     '1100000000',
+                  'ammFirmware':                'BPET66B',
+                  'systemErrorLED':             'off(1)',
+                  'bladesCommunicating':        '11111111111111',
+                  'bladesInstalled':            '11111111111111',
+                  'powerModulesFunctional':     '1111',
+                  'informationLED':             'off(0)',
+                  'healthSummaryDescription':   'Event'}
+
+      info = {}
+
+      for (var key in expected) {
+        if (doc[key] && doc[key] != expected[key]) {
+          failed = true
+          info[key] = doc[key]
+        }
+      }
+
+      if (failed) {
+        emit(doc.name, info)
+      }
+    }
+  }
+}

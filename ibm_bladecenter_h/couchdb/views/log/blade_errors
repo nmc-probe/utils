@@ -1,0 +1,11 @@
+function(doc) {
+  if (doc.type &&
+      doc.type == 'log_entry' &&
+      doc.severity &&
+      doc.severity == 'ERR' &&
+      doc.bladeDocId &&
+      typeof(doc.bladeDocId) == 'string' &&
+      doc.bladeDocId.match(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)) {
+      emit (doc.bladeDocId, doc)
+  }
+}

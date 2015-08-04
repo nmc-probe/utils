@@ -1,0 +1,5 @@
+function(doc) {
+  if (doc.type == 'chassis') {
+    emit (doc._id, doc)
+  }
+}

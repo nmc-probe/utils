@@ -1,0 +1,226 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2015 The New Mexico Consortium
+# 
+# {{{NMC-LICENSE
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+#
+# }}}
+#
+# Test all blades
+#
+
+import os,sys,getopt,pprint
+
+from nmc.couchdb import CouchDB
+from nmc.log import Log
+from nmc.nanek import Blade, Slot, Chassis, LogEntry
+from nmc.bladeutilsconfig import BladeUtilsConfig
+
+def main():
+    """
+    Program entry point
+    """
+    options = readOptions()
+
+    # Couch database connector
+    couch = CouchDB.withConfigFile()
+
+    testChassis = set(['chassis-012', 'chassis-013',
+                       'chassis-015', 'chassis-016',
+                       'chassis-020',
+                       'chassis-021', 'chassis-034',
+                       'chassis-035', 'chassis-037',
+                       'chassis-038'])
+
+    slots = {}
+
+    # Find chassis where all blades failed to netboot
+    chassisFailNetboot = set(Chassis.allBladesFailToNetboot(couch))
+
+    # Find blades that failed testing
+    bladeFailsTest = Blade.failsTest(couch)
+
+    # blade error logs
+    bladeErrorLog = LogEntry.bladeErrors(couch)
+
+    for bladeDocId in bladeFailsTest:
+        # Retrieve the slot for this blade
+        matchingSlot = Slot.retrieveWithMac(couch, bladeDocId)
+
+        # This blade might not be in a slot right now. Don't 
+        # report blades that are not currently in a slot
+        if matchingSlot:
+            slotDocId = matchingSlot[u'_id']
+
+            # Get a convenient reference to the blade test params
+            params = bladeFailsTest[bladeDocId]
+
+            # Remove the version identifier from the list of params
+            if params.has_key('version'):
+                params.pop('version', None)
+
+            # Check to see if the blade failed to netboot. If it's in a
+            # chassis where all blades failed to netboot, then this
+            # isn't relevant information. 
+            if params.get(u'netbooted', 'false') != 'true':
+                chassisDocId = matchingSlot[u'chassisDocId']
+                if chassisDocId in chassisFailNetboot:
+                    # This blade was in a chassis where all blades
+                    # failed to netboot. Reporting that this blade
+                    # failed to netboot is of no help. The chassis_status
+                    # program will report chassis where all slots failed
+                    # to netboot
+                    params.pop(u'netbooted', None)
+
+            if len(params) > 0:
+                params['bladeDocId'] = bladeDocId
+                params['nodeName'] = matchingSlot[u'nodeName']
+                slots[slotDocId] = params
+
+    # Find slots that are having communication problems
+    communicationProblems = Slot.communicationProblems(couch)
+    for slotDocId in communicationProblems:
+        if slots.has_key(slotDocId):
+            slots[slotDocId].update(communicationProblems[slotDocId])
+        else:
+            slots[slotDocId] = communicationProblems[slotDocId]
+
+    selectedChassisDocId = options.get('chassis', None)
+    selectedSlotDocId = options.get('slot', None)
+    selectedBladeDocId = options.get('blade', None)
+
+    for slot in sorted(slots.iterkeys()):
+        chassisDocId = slot.split(':')[0]
+        bladeDocId = slots[slot].get('bladeDocId', None)
+
+        displayTest = 1
+
+        if not chassisDocId in testChassis:
+            displayTest = None
+
+        if selectedChassisDocId and selectedChassisDocId != chassisDocId:
+            displayTest = None
+
+        if selectedSlotDocId and selectedSlotDocId != slot:
+            displayTest = None
+
+        if selectedBladeDocId and selectedBladeDocId != bladeDocId:
+            displayTest = None
+            
+        if displayTest:
+            print '--------------------------'
+            print '%s %s' % (slot, slots[slot][u'nodeName'])
+            for key in slots[slot]:
+                if key != 'bladeDocId' and key != 'nodeName':
+                    print '%s: %s' % (key, slots[slot][key])
+
+            if bladeDocId:
+                bladeErrors = bladeErrorLog.get(slots[slot]['bladeDocId'], None)
+
+            if bladeErrors:
+                print '\nError log:'
+                printBladeErrorLog(bladeErrors)
+
+            print
+
+def getKey(dict):
+    return dict['timestamp']
+
+def printBladeErrorLog(bladeErrors):
+    for value in sorted(bladeErrors, key=getKey):
+        if value['eventID'] != '0x10000002':
+            logMessage = '%s: %s' % (value['timestamp'] , value['message'])
+            print logMessage
+
+def readOptions():
+    progName = sys.argv[0]
+    config = BladeUtilsConfig()
+
+    optlist = None
+    args = None
+
+    options = {}
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'n:d:h', ['debug=', 'help', 'chassis=', 'slot=', 'blade='])
+
+    except getopt.GetoptError as err:
+        print(err)
+        usage(progName)
+        sys.exit(0)
+
+    num=None
+
+    # Process the options
+    for (opt,value) in optlist:
+        if opt == '--help' or opt == '-h':
+            usage(progName)
+            sys.exit(0)
+
+        if opt == '--debug' or opt == '-d':
+            Log.debugLevel = int(value)
+
+        if opt == '--chassis':
+            options['chassis'] = int(value)
+
+        if opt == '--slot':
+            options['slot'] = int(value)
+
+        if opt == '--blade':
+            options['blade'] = value
+
+    # Handle slot option BEFORE the chassis option
+    if options.has_key('slot'):
+        if not options.has_key('chassis'):
+            print ('--slot option requires --ch option\n')
+            usage(progName)
+            sys.exit(1)
+        else:
+            slotDocId = config.options['chassis']['slot_docid_format'] % (options['chassis'] , options['slot'])
+            options['slot'] = slotDocId
+            Log.debug(100, slotDocId)
+
+    # Handle chassis option after slot option
+    if options.has_key('chassis'):
+        chassisDocId = config.options['chassis']['chassis_docid_format'] % options['chassis']
+        options['chassis'] = chassisDocId
+        Log.debug(100, chassisDocId)
+
+    return options
+
+def usage(progName):
+    print 'Usage: %s [--debug=N|-d N]' % progName
+
+# Program entry point
+if __name__ == "__main__":
+    main()

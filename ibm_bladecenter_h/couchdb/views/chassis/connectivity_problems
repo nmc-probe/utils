@@ -1,0 +1,5 @@
+function(doc) {
+  if (doc.type == 'chassis' && (!doc.isPingable || !doc.collectedSNMP)) {
+      emit(doc._id, {'isPingable': doc.isPingable, 'collectedSNMP': doc.collectedSNMP})
+  }
+}

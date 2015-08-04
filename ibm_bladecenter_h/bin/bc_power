@@ -1,0 +1,164 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2015 The New Mexico Consortium
+# 
+# {{{NMC-LICENSE
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+#
+# }}}
+#
+# Get status of all chassis
+#
+
+import nmc,os,sys,getopt
+
+from nmc.couchdb import CouchDB
+from nmc.log import Log
+from nmc.nanek import Chassis
+
+def main():
+    """
+    Program entry point
+    """
+    options    = readOptions()
+    chassisNum = options['chassis']
+    state      = options.get('state', None)
+    slot       = options.get('slot', None)
+    cycle      = options.get('cycle', None)
+    on         = options.get('on', None)
+    off        = options.get('off', None)
+
+    lastNode = chassisNum * 14
+    firstNode = lastNode - 13
+
+    chassisParams = {'nodeNameFormat': 'na%03d',
+                     'chassisNameFormat': 'na-mm-%02d',
+                     'host': '10.56.100.%d' % chassisNum, 
+                     'num': chassisNum,
+                     'firstNode': firstNode,
+                     'lastNode': lastNode}
+
+    # Create a chassis object
+    chassis = Chassis(chassisParams)
+
+    if state:
+        states = chassis.powerState()
+        idx = 1
+        for state in states:
+            print 'chassis-%03d:slot-%02d power: %d' % (chassisNum, idx, state)
+            idx = idx + 1
+
+    if on:
+        if slot:
+            chassis.powerOnOffSlot(slot, 1)
+        else:
+            chassis.powerOnOff(1)
+
+    elif off:
+        if slot:
+            chassis.powerOnOffSlot(slot, 0)
+        else:
+            chassis.powerOnOff(0)
+
+    elif cycle:
+        if slot:
+            chassis.powerCycleSlot(clost)
+        else:
+            chassis.powerCycle()
+
+def usage(progName):
+    print ('Usage %s [options]')
+    print ('Power cycles chassis and slots')
+    print 
+    print (' --ch=N | -c N\tPower cycles slots in chassis N.')
+    print ('    If --slot or -s not specified, then all slots are power cycled')
+    print (' --slot=N | -s N\tPower cycle the specified slot in the chassis. Requires -ch or -c')
+    print (' --debug=N | -d N\tSet the debug log level')
+    print (' --help | -h\tPrint this usage message')
+    
+def readOptions():
+    progName = sys.argv[0]
+
+    optlist = None
+    args = None
+
+    options = {}
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'c:s:d:h', ['debug=', 'cycle', 'state', 'on', 'off', 'chassis=', 'slot=', 'help'])
+
+    except getopt.GetoptError as err:
+        print(err)
+        usage(progName)
+        sys.exit(0)
+
+    num=None
+
+    # Process the options
+    for (opt,value) in optlist:
+        if opt == '--chassis' or opt == '-c':
+            options['chassis'] = int(value)
+
+        if opt == '--slot' or opt == '-s':
+            options['slot'] = int(value)
+
+        if opt == '--state':
+            options['state'] = 1
+
+        if opt == '--cycle':
+            options['cycle'] = 1
+
+        if opt == '--on':
+            options['on'] = 1
+
+        if opt == '--off':
+            options['off'] = 1
+
+        if opt == '--help' or opt == '-h':
+            usage(progName)
+            sys.exit(0)
+
+        if opt == '--debug' or opt == '-d':
+            Log.debugLevel = int(value)
+
+    if not options.has_key('chassis'):
+        usage(progName)
+        sys.exit(0)
+
+    if options.has_key('slot') and not options.has_key('chassis'):
+        sys.exit(0)
+
+    return options
+
+# Program entry point
+if __name__ == "__main__":
+    main()

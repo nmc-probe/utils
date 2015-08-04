@@ -1,0 +1,71 @@
+// Test a blade
+function(doc) {
+  if (doc.type == 'blade') {
+    // Tag output with a version so that consumers of this view
+    // can be smart about future changes
+    info = {'version': 1 }
+
+    // Expected versions
+    expectedBmcVersion1 = "1.32"
+    expectedBmcVersion2 = " 1.32"
+    expectedBiosVersion = "1.12"
+    expectedDiagVersion = "1.06"
+
+    passed = true
+
+    // Number of CPUs must be 4   
+    if (doc.numCPUs && doc.numCPUs != 4) {
+      passed = false;
+      info["numCPUs"] = doc.numCPUs;
+    }
+
+    // Amount of memory must be 16GB, but the actual number
+    // in kb can vary a bit
+    if (doc.memory && doc.memory < 16465004) {
+      passed = false;
+      info["memory"] = doc.memory;
+    }
+
+    // Check for incorrect bios settings
+    if (doc.incorrectBIOSSettings && doc.incorrectBIOSSettings != 'None') {
+      passed = false;
+      info["bios"] = doc.incorrectBIOSSettings;
+    }
+
+    // Check health state
+    if (doc.healthState && doc.healthState != 'good(1)') {
+      passed = false
+      info['healthState'] = doc.healthState
+    }
+
+    // Check for netboot
+    if (doc.netbooted) { 
+      if (doc.netbooted != 'true') {
+        passed = false
+        info['netbooted'] = doc.netbooted
+      }
+    } else {
+      passed = false
+      info['netbooted'] = 'false'
+    }
+
+    if (doc.biosVersion && doc.biosVersion != expectedBiosVersion) {
+      passed = false
+      info['biosVersion'] = doc.biosVersion
+    }
+
+    if (doc.bmcVersion && (doc.bmcVersion != expectedBmcVersion1 && doc.bmcVersion != expectedBmcVersion2)) {
+      passed = false
+      info['bmcVersion'] = doc.bmcVersion
+    }
+
+    if (doc.diagVersion && doc.diagVersion != expectedDiagVersion) {
+      passed = false
+      info['diagVersion'] = doc.diagVersion
+    }
+
+    if (!passed) {
+      emit(doc.mac0, info)
+    }
+  }
+}

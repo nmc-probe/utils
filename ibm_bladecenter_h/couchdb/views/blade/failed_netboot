@@ -1,0 +1,7 @@
+function(doc) {
+  if (doc.type == 'blade') {
+    if (!doc.netbooted || (doc.netbooted && doc.netbooted != 'true')) {
+        emit (doc._id, {'netbooted': 'false'})
+    }
+  }
+}

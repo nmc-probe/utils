@@ -1,0 +1,120 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2015 The New Mexico Consortium
+# 
+# {{{NMC-LICENSE
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+#
+# }}}
+#
+# Collect SNMP information from IBM BladeCenter H Advanced
+# Management Modules and put the data into a CouchDB 
+
+import nmc,os,getopt,sys
+
+from nmc.couchdb import CouchDB
+from nmc.log import Log
+from nmc.nanek import Chassis
+
+def main():
+    """
+    Program entry point
+    """
+    # Couch database connector
+    couch = CouchDB.withConfigFile()
+
+    chassisNum = readOptions()
+
+    if chassisNum:
+        # Planning for ability to handle a list of chassis in the future
+        chassisList = [chassisNum]
+        #chassisList = [12,13,14,15,16,17,20,21,22,31,32,33,34,35,36,37,38,39,42,43,44]
+        for chassisNum in chassisList:
+            Log.info('Collecting SNMP for chassis %d' % chassisNum)
+            lastNode = chassisNum * 14
+            firstNode = lastNode - 13
+
+            chassisParams = {'nodeNameFormat': 'na%03d',
+                             'chassisNameFormat': 'na-mm-%02d',
+                             'host': '10.56.100.%d' % chassisNum, 
+                             'num': chassisNum,
+                             'firstNode': firstNode,
+                             'lastNode': lastNode}
+
+            # Create a chassis object
+            chassis = Chassis(chassisParams)
+
+            if chassis.ping():
+                # Collect the info about all blades in this chassis
+                # and persist the information to CouchDB
+                chassis.collectInfoAndPersist(couch)
+
+                # Collect and clear the event log
+                chassis.collectAndClearEventLog(couch)
+
+def usage(progName):
+    print ('%s: [--num=|-n=] chassis number, [--help|-h] show help' % progName)
+    
+def readOptions():
+    progName = sys.argv[0]
+
+    optlist = None
+    args = None
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'n:d:h', ['num=', 'debug=', 'help'])
+
+    except getopt.GetoptError as err:
+        print(err)
+        usage(progName)
+    
+    num=None
+
+    # Process the options
+    for (opt,value) in optlist:
+        if opt == '--num' or opt == '-n':
+            num=int(value)
+
+        if opt == '--help' or opt == '-h':
+            usage(progName)
+
+        if opt == '--debug' or opt == '-d':
+            Log.debugLevel = int(value)
+
+    if not num:
+        usage(progName)
+
+    return num
+
+# Program entry point
+if __name__ == "__main__":
+    main()

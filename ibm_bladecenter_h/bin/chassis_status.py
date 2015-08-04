@@ -1,0 +1,190 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2015 The New Mexico Consortium
+# 
+# {{{NMC-LICENSE
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+#
+# }}}
+#
+# Get status of all chassis
+#
+
+import nmc,os,getopt,sys
+
+from nmc.couchdb import CouchDB
+from nmc.log import Log
+from nmc.nanek import Chassis
+
+import json,httplib,datetime
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def main():
+    """
+    Program entry point
+    """
+    readOptions()
+
+    # Couch database connector
+    couch = CouchDB.withConfigFile()
+
+    # Get dictionary of all chassis
+    allChassis = Chassis.all(couch)
+
+    chassis = {}
+
+    for ch in allChassis:
+        chassis[ch[0]] = ch[1]
+
+    # Find chassis where all blades failed to netboot
+    failNetboot = Chassis.allBladesFailToNetboot(couch)
+
+    for ch in failNetboot:
+        chassis[ch]['problem'] = {'All blades failed to netboot': 1}
+
+    # Find chassis that fail our test
+    failsTest = Chassis.failsTest(couch)
+    
+    for ch in failsTest:
+        chassisDocId = ch[0]
+        problem = chassis[chassisDocId].get('problem', None)
+
+        if problem:
+            problem.update(ch[1])
+        else:
+            problem = ch[1]
+
+        chassis[chassisDocId]['problem'] = problem
+
+    for ch in sorted(chassis.iterkeys()):
+        problem = chassis[ch].get('problem', None)
+        if problem:
+            print ch + ' ' + bcolors.FAIL + '[FAIL]' + bcolors.ENDC
+            for key in problem:
+                print ' %s: %s' % (key, problem[key])
+        else:
+            print ch + ' ' + bcolors.OKGREEN + '[GOOD]' + bcolors.ENDC
+
+def oldMain():
+    """
+    Program entry point
+    """
+    readOptions()
+
+    # Couch database connector
+    couch = CouchDB.withConfigFile()
+
+    # Get dictionary of all chassis
+    allChassis = Chassis.all(couch)
+
+    # Find chassis where all blades failed to netboot
+    failNetboot = Chassis.allBladesFailToNetboot(couch)
+
+    # Find chassis with unreachable AMMs
+    unreachableAMMs = Chassis.unreachableAMMs(couch)
+
+    # Find chassis with wrong firmwares
+    wrongFirmware = Chassis.wrongFirmware(couch)
+
+    # Find chassis with bad fans
+    badFans = Chassis.badFans(couch)
+
+    # Update the chassis dictionary with results from failedNetboot
+    for chassis in failNetboot:
+        allChassis[chassis] = "All blades failed to netboot"
+
+    # Update chassis dictionary with results from unreachableAMMs
+    ammUnreachable = 'AMM unreachable'
+    for chassis in unreachableAMMs:
+        if allChassis[chassis] != '':
+            allChassis[chassis] = '%s, %s' % (allChassis[chassis], ammUnreachable)
+        else:
+            allChassis[chassis] = ammUnreachable
+
+    # Any chassis that made it this far can be used for testing, but maybe not production
+    for chassis in allChassis:
+        if allChassis[chassis] == '':
+            allChassis[chassis] = 'AMM reachable, blades netbooted'
+
+    # Update chassis dictionary with results from wrongFirmware
+    for chassis in wrongFirmware:
+        allChassis[chassis] = '%s, %s' % (allChassis[chassis], 'AMM has wrong firmware')
+        
+    # Print results
+    for chassis in sorted(allChassis.iterkeys()):
+        message = allChassis[chassis]
+        prefix = None
+
+        if message == 'AMM reachable, blades netbooted':
+            prefix = bcolors.OKGREEN + '[GOOD]   ' + bcolors.ENDC
+        elif message == 'AMM reachable, blades netbooted, AMM has wrong firmware':
+            prefix = bcolors.WARNING + '[WARNING]' + bcolors.ENDC
+        else:
+            prefix = bcolors.FAIL + '[FAIL]   ' + bcolors.ENDC
+
+
+        print '%s: %s %s' % (chassis, prefix, message)
+
+def readOptions():
+    progName = sys.argv[0]
+
+    optlist = None
+    args = None
+
+    options = {}
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'd:', ['debug='])
+
+    except getopt.GetoptError as err:
+        print(err)
+        usage(progName)
+    
+    num=None
+
+    # Process the options
+    for (opt,value) in optlist:
+        if opt == '--debug' or opt == '-d':
+            Log.debugLevel = int(value)
+
+# Program entry point
+if __name__ == "__main__":
+    main()

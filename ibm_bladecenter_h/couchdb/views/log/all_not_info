@@ -1,0 +1,8 @@
+// All log entries where severity is not INFO
+function(doc) {
+  if (doc.type && doc.type == 'log_entry' && 
+      doc.timestamp && 
+      doc.severity && doc.severity != 'INFO') {
+    emit(doc.timestamp, doc)
+  }
+}
