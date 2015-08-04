@@ -60,7 +60,7 @@ def main():
                        'chassis-020',
                        'chassis-021', 'chassis-034',
                        'chassis-035', 'chassis-037',
-                       'chassis-038'])
+                       'chassis-038', 'chassis-042'])
 
     slots = {}
 
