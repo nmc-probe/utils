@@ -55,7 +55,7 @@ def main():
     # Couch database connector
     couch = CouchDB.withConfigFile()
 
-    Log.info('Deleting document "%s" revision %s' % options['id'], options['revision'])
+    Log.info('Deleting document "%s" revision %s' % (options['id'], options['revision']))
 #    couch.delete(options['id'], options['revision'])
 
 def usage(progName):
