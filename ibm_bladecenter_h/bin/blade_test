@@ -58,7 +58,9 @@ def main():
     testChassis = set(['chassis-012', 'chassis-013',
                        'chassis-015', 'chassis-016',
                        'chassis-020',
-                       'chassis-021', 'chassis-034',
+                       'chassis-021', 
+                       'chassis-031',
+                       'chassis-034',
                        'chassis-035', 'chassis-037',
                        'chassis-038', 'chassis-042'])
 
@@ -158,8 +160,15 @@ def getKey(dict):
 
 def printBladeErrorLog(bladeErrors):
     for value in sorted(bladeErrors, key=getKey):
-        if value['eventID'] != '0x10000002':
-            logMessage = '%s: %s' % (value['timestamp'] , value['message'])
+        eventID = value.get('eventID', None)
+
+        displayEvent = 1
+
+        if eventID and eventID == '0x10000002':
+            displayEvent = None
+
+        if displayEvent:
+            logMessage = '%s: %s %s' % (value['timestamp'] , value['severity'], value['message'])
             print logMessage
 
 def readOptions():
