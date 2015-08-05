@@ -91,7 +91,7 @@ def main():
 
     elif cycle:
         if slot:
-            chassis.powerCycleSlot(clost)
+            chassis.powerCycleSlot(slot)
         else:
             chassis.powerCycle()
 
