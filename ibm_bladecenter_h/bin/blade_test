@@ -73,7 +73,7 @@ def main():
     bladeFailsTest = Blade.failsTest(couch)
 
     # blade error logs
-    bladeErrorLog = LogEntry.bladeErrors(couch)
+    bladeErrorLog = {}
 
     for bladeDocId in bladeFailsTest:
         # Retrieve the slot for this blade
@@ -86,6 +86,12 @@ def main():
 
             # Get a convenient reference to the blade test params
             params = bladeFailsTest[bladeDocId]
+
+            # Get errors
+            singleBladeErrors = LogEntry.bladeErrors(couch, bladeDocId)
+        
+            if singleBladeErrors:
+                bladeErrorLog.update(singleBladeErrors)
 
             # Remove the version identifier from the list of params
             if params.has_key('version'):
