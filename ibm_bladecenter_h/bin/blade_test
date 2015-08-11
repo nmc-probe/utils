@@ -147,7 +147,7 @@ def main():
             
         if displayTest:
             print '--------------------------'
-            print '%s %s' % (slot, slots[slot][u'nodeName'])
+            print '%s' % (slot)
             for key in slots[slot]:
                 if key != 'bladeDocId' and key != 'nodeName':
                     print '%s: %s' % (key, slots[slot][key])
@@ -157,25 +157,41 @@ def main():
 
             if bladeErrors:
                 print '\nError log:'
-                printBladeErrorLog(bladeErrors)
+                printBladeErrorLog(bladeErrors, chassisDocId, slot, slots[slot]['bladeDocId'])
 
             print
 
 def getKey(dict):
     return dict['timestamp']
 
-def printBladeErrorLog(bladeErrors):
+def printBladeErrorLog(bladeErrors, chassisDocId, slotDocId, bladeDocId): 
+    eventDimmSet = set(['0x0a000581', # DIMM 1
+                        '0x0a000582', # DIMM 2
+                        '0x0a000583', # DIMM 3
+                        '0x0a000584', # DIMM 4
+                        '0x0a000585', # DIMM 5 
+                        '0x0a000586', # DIMM 6
+                        '0x0a000587', # DIMM 7 
+                        '0x0a000588',]) # DIMM 8
+
     for value in sorted(bladeErrors, key=getKey):
         eventID = value.get('eventID', None)
 
         displayEvent = 1
-
+        
         if eventID and eventID == '0x10000002':
             displayEvent = None
 
         if displayEvent:
-            logMessage = '%s: %s %s' % (value['timestamp'] , value['severity'], value['message'])
+            if not eventID:
+                eventID = 'None'
+
+            logMessage = '%s: %s %s %s' % (value['timestamp'], eventID, value['severity'], value['message'])
             print logMessage
+
+                                
+#            if eventID in eventDimmSet:
+#                print 'bc_add_log --chassisDocId %s --slotDocId %s --bladeDocId %s --eventID %s --severity FIX --message "%s"' % (chassisDocId, slotDocId, bladeDocId, eventID, value['message'])
 
 def readOptions():
     progName = sys.argv[0]
