@@ -59,7 +59,6 @@ def main():
                        'chassis-015', 'chassis-016',
                        'chassis-020',
                        'chassis-021', 
-                       'chassis-031',
                        'chassis-034',
                        'chassis-035', 'chassis-037',
                        'chassis-038', 'chassis-042'])
@@ -78,6 +77,8 @@ def main():
     for bladeDocId in bladeFailsTest:
         # Retrieve the slot for this blade
         matchingSlot = Slot.retrieveWithMac(couch, bladeDocId)
+#        Log.info(bladeDocId)
+#        Log.info(matchingSlot)
 
         # This blade might not be in a slot right now. Don't 
         # report blades that are not currently in a slot
