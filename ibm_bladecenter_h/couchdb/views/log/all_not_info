@@ -3,6 +3,6 @@ function(doc) {
   if (doc.type && doc.type == 'log_entry' && 
       doc.timestamp && 
       doc.severity && doc.severity != 'INFO') {
-    emit(doc.timestamp, doc)
+    emit(doc.timestamp, null)
   }
 }
