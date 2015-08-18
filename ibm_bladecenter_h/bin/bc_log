@@ -177,7 +177,7 @@ def readOptions():
     options = {}
 
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'ad:h', ['ch=', 'debug=', 'start=', 'end=', 'help', 'noblade', 'noslot', 'chassisonly', 'all', 'slot=', 'blade=',
+        optlist, args = getopt.getopt(sys.argv[1:], 'ad:h', ['ch=', 'chassis=', 'debug=', 'start=', 'end=', 'help', 'noblade', 'noslot', 'chassisonly', 'all', 'slot=', 'blade=',
                                                              'skip-annoying'])
 
     except getopt.GetoptError as err:
@@ -191,7 +191,7 @@ def readOptions():
             usage(progName)
             sys.exit(0)
 
-        if opt == '--ch':
+        if opt == '--ch' or opt == '--chassis':
             options['chassis'] = int(value)
 
         if opt == '--slot':
