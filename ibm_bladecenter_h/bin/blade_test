@@ -41,10 +41,10 @@
 
 import os,sys,getopt,pprint
 
-from nmc.couchdb import CouchDB
-from nmc.log import Log
-from nmc.nanek import Blade, Slot, Chassis, LogEntry
-from nmc.bladeutilsconfig import BladeUtilsConfig
+from nmc_probe.couchdb import CouchDB
+from nmc_probe.log import Log
+from nmc_probe.nanek import Blade, Slot, Chassis, LogEntry
+from nmc_probe.bladeutilsconfig import BladeUtilsConfig
 
 def main():
     """

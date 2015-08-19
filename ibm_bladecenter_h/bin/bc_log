@@ -41,10 +41,10 @@
 
 import os, datetime, getopt, sys
 
-from nmc.couchdb import CouchDB
-from nmc.log import Log
-from nmc.nanek import Blade, Slot, Chassis, LogEntry
-from nmc.bladeutilsconfig import BladeUtilsConfig
+from nmc_probe.couchdb import CouchDB
+from nmc_probe.log import Log
+from nmc_probe.nanek import Blade, Slot, Chassis, LogEntry
+from nmc_probe.bladeutilsconfig import BladeUtilsConfig
 
 def main():
     """
@@ -83,18 +83,37 @@ def main():
     slot         = options.get('slot', None)
     blade        = options.get('blade', None)
     skipAnnoying = options.get('skipAnnoying', None)
+    params       = {}
 
-    if startDate:
-        startDate = startDate.isoformat()
+    start = None
+    end = None
 
-    if endDate:
-        endDate = endDate.isoformat()
-
-    if startDate:
-        if endDate:
-            dateRange = (startDate, endDate)
+    if startDate is not None:
+        if chassis is not None:
+            start = [chassis, startDate]
         else:
-            dateRange = (startDate, None)
+            start = [[], startDate]
+
+    if endDate is not None:
+        if chassis is not None:
+            end = [chassis, endDate]
+        else:
+            end = [[], endDate]
+
+        params['end'] = end
+
+    if chassis is not None and startDate is None and endDate is None:
+        start = [chassis]
+        end = [chassis, []]
+
+    if start is not None:
+        params['start'] = start
+
+    if end is not None:
+        params['end'] = end
+
+    # Hack until params for complex searches can be handled correctly
+    params = None
 
     # Get all log entries that are not info
     logEntries = []
@@ -102,7 +121,7 @@ def main():
     if all:
         logEntries = LogEntry.all(couch, dateRange)
     else:
-        logEntries = LogEntry.allNotInfo(couch, dateRange)
+        logEntries = LogEntry.allNotInfo(couch, params)
 
     for entry in logEntries:
         timestamp    = prettyDate(entry[0])
@@ -201,10 +220,10 @@ def readOptions():
             options['blade'] = value
 
         if opt == '--start':
-            options['start'] = datetime.datetime.strptime(value, '%Y-%m-%d')
+            options['start'] = datetime.datetime.strptime(value, '%Y-%m-%d').isoformat()
 
         if opt == '--end':
-            options['end'] = datetime.datetime.strptime(value, '%Y-%m-%d')
+            options['end'] = datetime.datetime.strptime(value, '%Y-%m-%d').isoformat()
 
         if opt == '--noslot':
             options['noslot'] = 1

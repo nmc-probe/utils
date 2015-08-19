@@ -39,11 +39,11 @@
 # Get status of all chassis
 #
 
-import nmc,os,sys,getopt
+import os,sys,getopt
 
-from nmc.couchdb import CouchDB
-from nmc.log import Log
-from nmc.nanek import Chassis
+from nmc_probe.couchdb import CouchDB
+from nmc_probe.log import Log
+from nmc_probe.nanek import Chassis
 
 def main():
     """
