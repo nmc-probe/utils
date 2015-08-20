@@ -86,9 +86,9 @@ class LUNPrep:
         self.iscsi_login(params)
         self.udevd_settle_down()
         self.mount(params)
-#        chroot_prep(params)
-#        dismount(params)
-#        iscsi_logout(params)
+        self.chroot_prep(params)
+        self.dismount(params)
+        self.iscsi_logout(params)
 
     def iscsi_device(self, params):
         return '/dev/disk/by-path/ip-%s:%s-iscsi-%s-lun-%s-part%s' % (params['ip'],
@@ -143,12 +143,13 @@ class LUNPrep:
                 log_info_node(params, 'mount -o bind %s %s' % (bind_mount, dest))
                 subprocess.check_call([mount_cmd, '-o', 'bind', bind_mount, dest])
 
-    #-------------------------------------------------------------------------------
-    # Dismount an image
-    #
-    # @param image_params   Image parameter dictionary
-    #-------------------------------------------------------------------------------
-    def dismount_image(self, params):
+    def dismount(self, params):
+        '''Dismount an target lun
+        
+        Parameters
+        params : dict
+            Dictionary of parameters for the target lun
+        '''
         chroot = params['chroot']
     
         # Mount /sys, /proc and /dev in image chroot
@@ -162,13 +163,51 @@ class LUNPrep:
         log_info_node(params, 'dismounting %s' % chroot)
         subprocess.check_call([umount_cmd, chroot])
 
+    def chroot_prep(self, params):
+        '''Call the prep command that is inside the LUN'''
+
+        # Example command
+        #
+        # /chrootdir/usr/local/bin/lun_prep
+        #    --initiator-name=iqn.2014-11.nmc-probe.org:2da412368f 
+        #    --target-ip=10.57.0.5
+        #    --target-port=3260
+        #    --target-wwn=iqn.2014-11.nmc-probe.org:testbed.testbed-singlenode.ns0001
+        #    --ctrl-iface=enp2s4
+        #    --ctrl-mac=00:1a:64:bd:34:7c
+        #    --console-port=1
+        #    --console-speed=19200
+        #    --console-params=n1
+
+        cmd_params = {
+            '--initiator-name': params['initiator_name'],
+            '--target-ip':      params['ip'],
+            '--target-port':    params['port'],
+            '--target-wwn':     params['wwn'],
+            '--ctrl-iface':     params['ctrl_iface'],
+            '--ctrl-mac':       params['ctrl_mac'],
+            '--console-port':   params['console_port'],
+            '--console-speed':  params['console_speed'],
+            '--console-params': params['console_params'],
+        }
+
+        # Process arguments
+        argument_list = [chroot_cmd, params['chroot'], chroot_prep_image_cmd]
+
+        for key,value in cmd_params.iteritems():
+            argument_list.append('%s=%s' % (key, value))
+
+        # Chroot call to prep image
+        log_info_node(params, 'running prep command %s' % (' '.join(argument_list)))
+        subprocess.check_call(argument_list)
+
     #-------------------------------------------------------------------------------
     # chroot call to prep an image
     #
     # @param chroot        The path to the chroot directory
     # @param image_params  Image parameter dictionary
     #-------------------------------------------------------------------------------
-    def chroot_prep(self, params):
+    def chroot_prep_delete_me(self, params):
         chroot = params['chroot']
 
         # List of options / image_parameters to pass from image_params
@@ -202,8 +241,8 @@ class LUNPrep:
     #-------------------------------------------------------------------------------
     # Login / logout of an iscsi target
     #
-    # @param cmd           Either -l or -u, -l for login, -u for logout
-    # @param image_params  The image parameter dictionary
+    # @param cmd     Either -l or -u, -l for login, -u for logout
+    # @param params  The image parameter dictionary
     #-------------------------------------------------------------------------------
     def iscsi_cmd(self, cmd, params):
         ip_port = '%s:%s' % (params['ip'], params['port'])
