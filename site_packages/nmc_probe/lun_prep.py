@@ -261,11 +261,6 @@ class LUNPrep:
         log_info_node(params, 'calling %s in chroot %s' % (chroot_prep_image_cmd, chroot_dir))
         self.run(argument_list)
 
-    def iscsi_cmd_wwn_base(self, params):
-        '''iscsiadm command base for a specific target, portal and port'''
-        ip_port = '%s:%s' % (params['ip'], params['port'])
-        return [iscsiadm_cmd, '-m', 'node', '-T', params['wwn'], '-p', ip_port]
-
     def iscsi_target_cmd(self, params, args):
         '''iscsiadm command base for a specific target, portal and port'''
         ip_port = '%s:%s' % (params['ip'], params['port'])
@@ -273,89 +268,13 @@ class LUNPrep:
         cmd.extend(args)
         self.run(cmd)
         
-    #-------------------------------------------------------------------------------
-    # Login / logout of an iscsi target
-    #
-    # @param cmd     Either -l or -u, -l for login, -u for logout
-    # @param params  The image parameter dictionary
-    #-------------------------------------------------------------------------------
-    def iscsi_cmd(self, cmd, params):
-        ip_port = '%s:%s' % (params['ip'], params['port'])
-   
-        action = 'into'
-        if cmd == '-u':
-            action = 'out of'
-        log_info_node(params, 'logging %s iSCSI target %s' % (action, params['wwn']))
-
-        self.run([iscsiadm_cmd, '-m', 'node', cmd, '-T', params['wwn'], '-p', ip_port])
-
-    #-------------------------------------------------------------------------------
-    # iscsi discovery
-    #
-    # @param iscsi_target_server  
-    #-------------------------------------------------------------------------------
-    def iscsi_discovery(self, params):
-        args = [iscsiadm_cmd, '-m', 'discovery', '-t', 'st', '-p', params['ip']]
-        Log.info('iscsi target discovery on %s: %s' % (params['ip'], ' '.join(args)))
-        self.run(args)
-
-    #-------------------------------------------------------------------------------
-    # Log into an iscsi target
-    #
-    # @param node_param_list   list of all node paramegers
-    #-------------------------------------------------------------------------------
-    def iscsi_login(self, params):
-        # Log into the target
-        self.iscsi_target_cmd(params, ['-l'])
-
-        # Just in case the target does not get deleted, this prevents automatic login
-        # on reboot. Auto login can cause multiple connections to a block device to be
-        # open which in the case of ZFS + iSCSI sharing, causes massive slowdowns
-        # and possible corruption
-        self.iscsi_target_cmd(['-o', 'update', '-n', 'node.startup', '-v', 'manual'])
-        self.iscsi_target_cmd(['-o', 'update', '-n', 'node.conn[0].startup', '-v', 'manual'])
-
-#        login_cmd = self.iscsi_cmd_wwn_base(params)
-#        login_cmd.append('-l')
-#        log_info_node(params, 'logging into iSCSI target %s' % (params['wwn']))
-#        self.run(login_cmd)
-#
-#        node_startup = self.iscsi_cmd_wwn_base(params)
-#        node_startup.extend(['-o', 'update', '-n', 'node.startup', '-v', 'manual'])
-#        self.run(node_startup)
-#
-#        node_conn = self.iscsi_cmd_wwn_base(params)
-#        self.run(node_conn)
-
-    #-------------------------------------------------------------------------------
-    # Log out of all iscsi targets
-    #
-    # @param node_param_list   list of all node paramegers
-    #-------------------------------------------------------------------------------
-    def iscsi_logout(self, params):
-        self.iscsi_target_cmd(params, ['-u'])
-
-    def iscsi_new(self, params):
-        '''Add an iSCSI target'''
-        cmd = self.iscsi_cmd_wwn_base(params)
-        cmd.extend(['-o', 'new'])
-        self.run(cmd)
-
-    def iscsi_delete(self, params):
-        '''Delete an iSCSI target'''
-        cmd = self.iscsi_cmd_wwn_base(params)
-        cmd.extend(['-o', 'delete'])
-        self.run(cmd)
-
-
-    #-------------------------------------------------------------------------------
-    # Wait for udevd to create /dev/disk/by-path devices
-    #-------------------------------------------------------------------------------
     def udevd_settle_down(self):
+        '''Wait for udevd to create /dev/disk/by-path devices'''
         self.run([udevadm_cmd, 'trigger', 'block'])
         self.run([udevadm_cmd, 'settle'])
 
     def run(self, args):
+        '''Run a command, capture stderr and report the exception, if an exception happens'''
         Log.info('%s' % ' '.join(args))
 
         pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
