@@ -43,6 +43,7 @@ from  nmc_probe.lun_prep import LUNPrep
 from nmc_probe.log import Log
 
 from subprocess import CalledProcessError
+import traceback
 
 class LUNPrepREST(Resource):
     def post(self):
@@ -78,10 +79,22 @@ class LUNPrepREST(Resource):
 
         except (TypeError, ValueError), e:
             Log.error(str(e))
-            return {'status': str(e)}, 501
+            return {'status': str(e),
+                    'stacktrace': traceback.format_exc(),
+                }, 501
+
         except (CalledProcessError), e:
+            cmd = ' '.join(e.cmd)
             Log.error(' '.join(e.cmd))
-            return {'status': str(e)}, 501
+            return {'status': 'failed',
+                    'cmd':    ' '.join(e.cmd),
+                    'stacktrace': traceback.format_exc(),
+                    'output': str(e.output)}, 501
+
+        except (Exception), e:
+            return {'status': 'fail',
+                    'stacktrace': traceback.format_exc(),
+                    'message': str(e)}, 501
 
     @property
     def post_parser(self):

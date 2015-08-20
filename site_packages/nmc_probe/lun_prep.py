@@ -82,13 +82,36 @@ class LUNPrep:
         self.prep(params)
 
     def prep(self, params):
-        self.iscsi_discovery(params)
-        self.iscsi_login(params)
+        # Add the target to the database
+        self.iscsi_target_cmd(params, ['-o', 'new'])
+
+        # Defensive maneuver:
+        #
+        # Just in case the target does not get deleted, this prevents automatic login
+        # on reboot. Auto login can cause multiple connections to a block device to be
+        # open which in the case of ZFS + iSCSI sharing, causes massive slowdowns
+        # and possible corruption
+        self.iscsi_target_cmd(params, ['-o', 'update', '-n', 'node.startup', '-v', 'manual'])
+        self.iscsi_target_cmd(params, ['-o', 'update', '-n', 'node.conn[0].startup', '-v', 'manual'])
+
+        # Log into the target
+        self.iscsi_target_cmd(params, ['-l'])
+
+        # Wait for udevd to settle down and for the device to be created
         self.udevd_settle_down()
+
+        # Mount the target
         self.mount(params)
+
+        # Prep the target
         self.chroot_prep(params)
+
+        # Dismount
         self.dismount(params)
-        self.iscsi_logout(params)
+
+        # Logout and delete
+        self.iscsi_target_cmd(params, ['-u'])
+        self.iscsi_target_cmd(params, ['-o', 'delete'])
 
     def iscsi_device(self, params):
         return '/dev/disk/by-path/ip-%s:%s-iscsi-%s-lun-%s-part%s' % (params['ip'],
@@ -128,7 +151,7 @@ class LUNPrep:
         # device from a previous prep run that died
         if not os.path.ismount(chroot):
             log_info_node(params, 'mount %s %s' % (device, chroot))
-            subprocess.check_call([mount_cmd, device, chroot])
+            self.run([mount_cmd, device, chroot])
         else:
             log_info_node(params, '%s already mounted, hoping for the best' % chroot)
 
@@ -141,7 +164,7 @@ class LUNPrep:
             for bind_mount in bind_mounts:
                 dest = chroot + bind_mount
                 log_info_node(params, 'mount -o bind %s %s' % (bind_mount, dest))
-                subprocess.check_call([mount_cmd, '-o', 'bind', bind_mount, dest])
+                self.run([mount_cmd, '-o', 'bind', bind_mount, dest])
 
     def dismount(self, params):
         '''Dismount an target lun
@@ -158,10 +181,10 @@ class LUNPrep:
         for bind_mount in bind_mounts:
             dest = chroot + bind_mount
             log_info_node(params, 'dismounting %s' % dest)
-            subprocess.check_call([umount_cmd, dest])
+            self.run([umount_cmd, dest])
 
         log_info_node(params, 'dismounting %s' % chroot)
-        subprocess.check_call([umount_cmd, chroot])
+        self.run([umount_cmd, chroot])
 
     def chroot_prep(self, params):
         '''Call the prep command that is inside the LUN'''
@@ -228,7 +251,7 @@ class LUNPrep:
                        'console_params']
 
         # Build the argument list
-        argument_list = [chroot_cmd, chroot_dir, chroot_prep_image_cmd]
+        argument_list = [chroot_cmd, chroot, chroot_prep_image_cmd]
         for option in option_list:
             fixed_option = option.replace('iscsi_', '').replace('_', '-')
             argument = '--%s=%s' % (fixed_option, params[option])
@@ -236,8 +259,20 @@ class LUNPrep:
 
         # Chroot call to prep image
         log_info_node(params, 'calling %s in chroot %s' % (chroot_prep_image_cmd, chroot_dir))
-        subprocess.check_call(argument_list)
+        self.run(argument_list)
 
+    def iscsi_cmd_wwn_base(self, params):
+        '''iscsiadm command base for a specific target, portal and port'''
+        ip_port = '%s:%s' % (params['ip'], params['port'])
+        return [iscsiadm_cmd, '-m', 'node', '-T', params['wwn'], '-p', ip_port]
+
+    def iscsi_target_cmd(self, params, args):
+        '''iscsiadm command base for a specific target, portal and port'''
+        ip_port = '%s:%s' % (params['ip'], params['port'])
+        cmd = [iscsiadm_cmd, '-m', 'node', '-T', params['wwn'], '-p', ip_port]
+        cmd.extend(args)
+        self.run(cmd)
+        
     #-------------------------------------------------------------------------------
     # Login / logout of an iscsi target
     #
@@ -252,7 +287,7 @@ class LUNPrep:
             action = 'out of'
         log_info_node(params, 'logging %s iSCSI target %s' % (action, params['wwn']))
 
-        subprocess.check_call([iscsiadm_cmd, '-m', 'node', cmd, '-T', params['wwn'], '-p', ip_port])
+        self.run([iscsiadm_cmd, '-m', 'node', cmd, '-T', params['wwn'], '-p', ip_port])
 
     #-------------------------------------------------------------------------------
     # iscsi discovery
@@ -262,7 +297,7 @@ class LUNPrep:
     def iscsi_discovery(self, params):
         args = [iscsiadm_cmd, '-m', 'discovery', '-t', 'st', '-p', params['ip']]
         Log.info('iscsi target discovery on %s: %s' % (params['ip'], ' '.join(args)))
-        subprocess.check_call(args)
+        self.run(args)
 
     #-------------------------------------------------------------------------------
     # Log into an iscsi target
@@ -270,7 +305,27 @@ class LUNPrep:
     # @param node_param_list   list of all node paramegers
     #-------------------------------------------------------------------------------
     def iscsi_login(self, params):
-        self.iscsi_cmd('-l', params)
+        # Log into the target
+        self.iscsi_target_cmd(params, ['-l'])
+
+        # Just in case the target does not get deleted, this prevents automatic login
+        # on reboot. Auto login can cause multiple connections to a block device to be
+        # open which in the case of ZFS + iSCSI sharing, causes massive slowdowns
+        # and possible corruption
+        self.iscsi_target_cmd(['-o', 'update', '-n', 'node.startup', '-v', 'manual'])
+        self.iscsi_target_cmd(['-o', 'update', '-n', 'node.conn[0].startup', '-v', 'manual'])
+
+#        login_cmd = self.iscsi_cmd_wwn_base(params)
+#        login_cmd.append('-l')
+#        log_info_node(params, 'logging into iSCSI target %s' % (params['wwn']))
+#        self.run(login_cmd)
+#
+#        node_startup = self.iscsi_cmd_wwn_base(params)
+#        node_startup.extend(['-o', 'update', '-n', 'node.startup', '-v', 'manual'])
+#        self.run(node_startup)
+#
+#        node_conn = self.iscsi_cmd_wwn_base(params)
+#        self.run(node_conn)
 
     #-------------------------------------------------------------------------------
     # Log out of all iscsi targets
@@ -278,12 +333,36 @@ class LUNPrep:
     # @param node_param_list   list of all node paramegers
     #-------------------------------------------------------------------------------
     def iscsi_logout(self, params):
-        self.iscsi_cmd('-u', params)
+        self.iscsi_target_cmd(params, ['-u'])
+
+    def iscsi_new(self, params):
+        '''Add an iSCSI target'''
+        cmd = self.iscsi_cmd_wwn_base(params)
+        cmd.extend(['-o', 'new'])
+        self.run(cmd)
+
+    def iscsi_delete(self, params):
+        '''Delete an iSCSI target'''
+        cmd = self.iscsi_cmd_wwn_base(params)
+        cmd.extend(['-o', 'delete'])
+        self.run(cmd)
+
 
     #-------------------------------------------------------------------------------
     # Wait for udevd to create /dev/disk/by-path devices
     #-------------------------------------------------------------------------------
     def udevd_settle_down(self):
-        subprocess.check_call([udevadm_cmd, 'trigger', 'block'])
-        subprocess.check_call([udevadm_cmd, 'settle'])
+        self.run([udevadm_cmd, 'trigger', 'block'])
+        self.run([udevadm_cmd, 'settle'])
+
+    def run(self, args):
+        Log.info('%s' % ' '.join(args))
+
+        pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = pipes.communicate()
+
+        if pipes.returncode != 0:
+            # an error happened!
+            err_msg = "%s. Code: %s" % (stderr.strip(), pipes.returncode)
+            raise Exception(err_msg)
     
