@@ -35,7 +35,7 @@
 # }}}
 
 import re, subprocess
-from nmc.log import Log
+from nmc_probe.log import Log
 
 class Assert:
     @classmethod

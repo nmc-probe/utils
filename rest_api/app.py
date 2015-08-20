@@ -1,3 +1,4 @@
+#!flask/bin/python
 # Copyright (c) 2015 The New Mexico Consortium
 # 
 # {{{NMC-LICENSE
@@ -34,46 +35,31 @@
 #
 # }}}
 
-class Log:
-    """
-    Logging class. Takes messages and logs them
-    to the appropriate place. All methods are class methods
-    """
-    debugLevel = None
+from flask import Flask
+from flask.ext.restful import Api, Resource, reqparse
 
-    @classmethod
-    def info(cls, message):
-        """
-        Log an information message
+from nmc_probe_rest.lun_clone import LUNClone
+from nmc_probe_rest.lun_prep import LUNPrepREST
+from nmc_probe_rest.zfs import SnapshotList, VolumeList, FilesystemList, AttributeList, Filesystem, Volume, Snapshot, Clone
 
-        Params
-        ------
-        message : string
-                  The information message to log
-        """
-        print('[INFO] %s' %  message)
+app = Flask(__name__)
+api = Api(app)
 
-    @classmethod
-    def error(cls, message):
-        """
-        Log an error message
+api.add_resource(LUNClone,    '/lun/api/v1.0/clone', endpoint='clone')
+api.add_resource(LUNPrepREST, '/lun/api/v1.0/prep',  endpoint='prep')
 
-        Params
-        ------
-        message : string
-                  The error message to log
-        """
-        print('[ERROR] %s' % message)
+manage_zfs = None
 
-    @classmethod
-    def debug(cls, level, message):
-        """
-        Log a debug method
+if manage_zfs is not None:
+    api.add_resource(SnapshotList,   '/zfs/api/v1.0/snapshots',   endpoint='snapshots')
+    api.add_resource(VolumeList,     '/zfs/api/v1.0/volumes',     endpoint='volumes')
+    api.add_resource(FilesystemList, '/zfs/api/v1.0/filesystems', endpoint='filesystems')
+    api.add_resource(AttributeList,  '/zfs/api/v1.0/attributes',  endpoint='attributes')
 
-        Params
-        ------
-        message : string
-                  The debug message to log
-        """
-        if Log.debugLevel and level <= Log.debugLevel:
-            print('[DEBUG] %s' %  message)
+    api.add_resource(Filesystem, '/zfs/api/v1.0/filesystem',  endpoint='filesystem')
+    api.add_resource(Volume,     '/zfs/api/v1.0/volume',      endpoint='volume')
+    api.add_resource(Snapshot,   '/zfs/api/v1.0/snapshot',    endpoint='snapshot')
+    api.add_resource(Clone,      '/zfs/api/v1.0/clone',       endpoint='clone')
+
+if __name__ == '__main__':
+    app.run(debug=True)

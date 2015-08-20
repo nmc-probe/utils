@@ -1,8 +1,8 @@
 #!flask/bin/python
 from flask import Flask, jsonify
 from flask.ext.restful import Api, Resource, reqparse
-from nmc.zfs import ZFS, CommandError
-from nmc.log import Log
+from nmc_probe.zfs import ZFS, CommandError
+from nmc_probe.log import Log
 
 import time
 import sys
@@ -10,28 +10,31 @@ import sys
 app = Flask(__name__)
 api = Api(app)
 
-zfs = ZFS()
-
 
 class SnapshotList(Resource):
     def get(self):
+        zfs = ZFS()
         return jsonify(zfs.snapshots)
 
 class VolumeList(Resource):
     def get(self):
+        zfs = ZFS()
         return jsonify(zfs.volumes)
 
 class FilesystemList(Resource):
     def get(self):
+        zfs = ZFS()
         return jsonify(zfs.filesystems)
 
 class AttributeList(Resource):
     def get(self):
+        zfs = ZFS()
         return jsonify(zfs.attributes)
 
 class ZFSResource(Resource):
     def post(self):
         try:
+            zfs = ZFS()
             args = self.postParser.parse_args()
             self.postHandler(args)
         except (TypeError, ValueError, CommandError), e:
@@ -41,6 +44,7 @@ class ZFSResource(Resource):
 
     def delete(self):
         try:
+            zfs = ZFS()
             args = self.deleteParser.parse_args()
             self.deleteHandler(args)
         except (TypeError, ValueError, CommandError), e:
@@ -49,9 +53,11 @@ class ZFSResource(Resource):
         return {'status': 'ok'}, 201
 
     def postHandler(self, args):
+        zfs = ZFS()
         zfs.create(args)
 
     def deleteHandler(self, args):
+        zfs = ZFS()
         zfs.destroy(args)
 
     @property
@@ -93,13 +99,16 @@ class Filesystem(ZFSResource):
 
 class Snapshot(ZFSResource):
     def postHandler(self, args):
+        zfs = ZFS()
         zfs.snapshot(args)
 
 class Clone(ZFSResource):
     def postHandler(self, args):
+        zfs = ZFS()
         zfs.clone(args)
 
     def deleteHandler(self, args):
+        zfs = ZFS()
         zfs.destroy(args)
 
     @property
