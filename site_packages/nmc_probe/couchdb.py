@@ -329,7 +329,7 @@ class CouchDB:
             for row in output[u'rows']:
                 key   = row[u'key']
                 value = row.get(u'value', None)
-                if params.has_key('includeDocs'):
+                if params is not None and params.has_key('includeDocs'):
                     value = row.get(u'doc', None)
                 results.append((key, value))
 
