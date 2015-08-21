@@ -75,6 +75,8 @@ def create(fs, port, pool, image_pid, image_name, image_snapshot, dest_pid, dest
         "createParent": True,
     }
 
+    print 'creating %s' % params
+
     path = '/lun/api/v1.0/clone'
 
     connection = httplib.HTTPConnection(fs, port)
@@ -103,6 +105,8 @@ def delete(fs, port, pool, image_name, image_snapshot, dest_pid, dest_eid, node_
         "wwn":          wwn,
         "deleteClones": True
     }
+
+    print 'deleting %s' % params
 
     path = '/lun/api/v1.0/clone'
 

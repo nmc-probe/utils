@@ -46,7 +46,7 @@ app = Flask(__name__)
 api = Api(app)
 
 api.add_resource(LUNClone,    '/lun/api/v1.0/clone', endpoint='clone')
-api.add_resource(LUNPrepREST, '/lun/api/v1.0/prep',  endpoint='prep')
+#api.add_resource(LUNPrepREST, '/lun/api/v1.0/prep',  endpoint='prep')
 
 manage_zfs = None
 
