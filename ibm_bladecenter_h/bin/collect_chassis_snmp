@@ -39,7 +39,7 @@
 # Collect SNMP information from IBM BladeCenter H Advanced
 # Management Modules and put the data into a CouchDB 
 
-import nmc,os,getopt,sys
+import os,getopt,sys
 
 from nmc_probe.couchdb import CouchDB
 from nmc_probe.log import Log
