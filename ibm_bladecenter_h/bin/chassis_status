@@ -39,7 +39,7 @@
 # Get status of all chassis
 #
 
-import nmc,os,getopt,sys
+import os,getopt,sys
 
 from nmc_probe.couchdb import CouchDB
 from nmc_probe.log import Log
