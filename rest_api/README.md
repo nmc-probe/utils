@@ -78,15 +78,9 @@ Here's how to create a 5 year cert.
 ```bash
 openssl req \
   -x509 -nodes -days 1826 \
-  -newkey rsa:2048 -keyout lun_clone.pem -out lun_clone.pem
-```
-
-```bash
-openssl req \
-  -x509 -nodes -days 1826 \
-  -subj '/C=US/ST=New Mexico/L=Los Alamos/CN=ns-host.northslope.nx' \
+  -subj '/C=US/ST=New Mexico/L=Los Alamos/CN=some-host.domain' \
   -newkey rsa:2048 -keyout lun_clone.pem -out lun_clone:.pem
-
+```
 
 Install and configure nginx
 
