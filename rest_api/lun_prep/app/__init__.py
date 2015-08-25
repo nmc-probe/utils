@@ -38,12 +38,13 @@
 from flask import Flask
 from flask.ext.restful import Api, Resource, reqparse
 
-from nmc_probe_rest.lun_prep import LUNPrepREST
+from nmc_probe_rest.lun_prep import LUNPrepREST, LUNPrepTest
 
 app = Flask(__name__)
 api = Api(app)
 
-api.add_resource(LUNPrepREST, '/lun/api/v1.0/prep',  endpoint='prep')
+api.add_resource(LUNPrepREST, '/lun/api/v1.0/prep',      endpoint='prep')
+api.add_resource(LUNPrepTest, '/lun/api/v1.0/prep_test', endpoint='prep_test')
 
 if __name__ == '__main__':
     app.run(debug=True)
