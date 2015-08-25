@@ -185,17 +185,6 @@ server {
 EOF
 ```
 
-create certificates
-
-```bash
-openssl req \
-       -newkey rsa:2048 -nodes \
-       -keyout /etc/nginx/ssl/lun_clone.key \
-       -x509 -days 365 \
-       -subj '/C=US/ST=New Mexico/L=Los Alamos/CN=ns-host.northslope.nx' \
-       -out /etc/nginx/ssl/lun_clone.crt
-```
-
 Start and enable nginx
 
 ```bash
