@@ -137,12 +137,6 @@ server {
     ssl_certificate      /etc/nginx/ssl/lun_clone.crt;
     ssl_certificate_key  /etc/nginx/ssl/lun_clone.key;
 
-    location /centos {
-        alias /nh/packages/CentOS;
-        index index.html index.htm;
-        autoindex on;
-    }
-
     location / {
         include uwsgi_params;
         uwsgi_pass unix:/var/run/lun_clone.sock;
