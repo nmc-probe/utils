@@ -12,6 +12,13 @@ sed -i s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
 reboot
 ```
 
+Install packages
+```bash
+yum install epel-release
+yum groupinstall "Development Tools"
+yum install python-virtualenv pcre-devel nginx
+```
+
 Clone the repository
 ```bash
 mkdir -p /usr/src/nmc-probe
@@ -20,10 +27,7 @@ git clone git@github.com:nmc-probe/utils.git
 ```
 
 Create the virtualenv
-
 ```bash
-yum groupinstall "Development Tools"
-yum install python-virtualenv pcre-devel
 mkdir /home/lun_prep
 cd /home/lun_prep
 virtualenv env
@@ -31,7 +35,6 @@ virtualenv env
 ```
 
 Populate virtualenv with required nmc-probe/utils/ files and directories
-
 ```bash
 cd /home/lun_prep
 ln -s /usr/src/nmc-probe/utils/rest_api/lun_prep/app .
@@ -60,11 +63,9 @@ WantedBy=multi-user.target
 EOF
 ```
 
-Install and configure nginx
+Configure nginx
 
 ```bash
-yum install epel-release
-yum install nginx
 mv /etc/nginx/nginx.conf /etc/nginx.conf.orig
 
 cat << EOF > /etc/nginx/nginx.conf
