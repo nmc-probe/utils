@@ -69,49 +69,6 @@ Verify that the lun_clone is running
 systemctl status lun_clone -l
 ```
 
-Create self signed server cert for web front end. Or go buy one. 
-
-```bash
-mkdir /etc/nginx/ssl
-cd /etc/nginx/ssl
-
-export SERVER_SUBJECT="/C=US/ST=New Mexico/L=Los Alamos/CN=ns-host.northslope.nx"
-export CLIENT_SUBJECT="/C=US/ST=New Mexico/L=Los Alamos/CN=ns-boss.northslope.nx"
-export DAYS=1865
-export BITS=2048
-
-# Create certificate authority:
-# Create private key for CA
-openssl genrsa -des3 -out ca.key 4096
-# Create cert for CA
-openssl req -new -x509 -days $DAYS -key ca.key -out ca.crt -subj "$SERVER_SUBJECT"
-  
-# Create the Server Key
-openssl genrsa -des3 -out lun_clone_enc.key $BITS
-
-# Remove encryption from private key
-openssl rsa -in lun_clone_enc.key -out lun_clone.key
-
-# Create the CSR
-openssl req -new -key lun_clone.key -out lun_clone.csr -subj "$SERVER_SUBJECT"
-
-# Sign the CSR with the newly created CA
-openssl x509 -req -days $DAYS -in lun_clone.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out lun_clone.crt
-
-# Create the client key
-openssl genrsa -des3 -out client_enc.key $BITS
-
-# Remove encryption from client key, since you'll likely be
-# consuming this REST service from a piece of software
-openssl rsa -in client_enc.key -out client.key
-
-# Create CSR for client
-openssl req -new -key client.key -out client.csr -subj "$CLIENT_SUBJECT"
-
-# Sign the CSR
-openssl x509 -req -days $DAYS -in client.csr -CA ca.crt -CAkey ca.key -set_serial 02 -out client.crt
-```
-
 Install and configure nginx
 
 ```bash
@@ -183,6 +140,48 @@ server {
     }
 }
 EOF
+```
+Create self signed server cert for web front end. Or go buy one. 
+
+```bash
+mkdir /etc/nginx/ssl
+cd /etc/nginx/ssl
+
+export SERVER_SUBJECT="/C=US/ST=New Mexico/L=Los Alamos/CN=server.domain"
+export CLIENT_SUBJECT="/C=US/ST=New Mexico/L=Los Alamos/CN=client.domain"
+export DAYS=1865
+export BITS=2048
+
+# Create certificate authority:
+# Create private key for CA
+openssl genrsa -des3 -out ca.key 4096
+# Create cert for CA
+openssl req -new -x509 -days $DAYS -key ca.key -out ca.crt -subj "$SERVER_SUBJECT"
+  
+# Create the Server Key
+openssl genrsa -des3 -out lun_clone_enc.key $BITS
+
+# Remove encryption from private key
+openssl rsa -in lun_clone_enc.key -out lun_clone.key
+
+# Create the CSR
+openssl req -new -key lun_clone.key -out lun_clone.csr -subj "$SERVER_SUBJECT"
+
+# Sign the CSR with the newly created CA
+openssl x509 -req -days $DAYS -in lun_clone.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out lun_clone.crt
+
+# Create the client key
+openssl genrsa -des3 -out client_enc.key $BITS
+
+# Remove encryption from client key, since you'll likely be
+# consuming this REST service from a piece of software
+openssl rsa -in client_enc.key -out client.key
+
+# Create CSR for client
+openssl req -new -key client.key -out client.csr -subj "$CLIENT_SUBJECT"
+
+# Sign the CSR
+openssl x509 -req -days $DAYS -in client.csr -CA ca.crt -CAkey ca.key -set_serial 02 -out client.crt
 ```
 
 Start and enable nginx
