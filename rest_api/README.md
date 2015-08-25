@@ -194,7 +194,7 @@ systemctl start nginx
 Test
 
 ```bash
-curl -s -k --key /etc/nginx/ssl/client.key --cert /etc/nginx/ssl/client.crt https://localhost/lun/api/v1.0/test
+curl -s -k --key /etc/nginx/ssl/client.key --cert /etc/nginx/ssl/client.crt https://localhost/lun/api/v1.0/clone_test
 ```
 
 You should see
