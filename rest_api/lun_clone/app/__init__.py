@@ -43,8 +43,8 @@ from nmc_probe_rest.lun_clone import LUNClone, LUNCloneTest
 app = Flask(__name__)
 api = Api(app)
 
-api.add_resource(LUNClone,     '/lun/api/v1.0/clone', endpoint='clone')
-api.add_resource(LUNCloneTest, '/lun/api/v1.0/test',  endpoint='test')
+api.add_resource(LUNClone,     '/lun/api/v1.0/clone',      endpoint='clone')
+api.add_resource(LUNCloneTest, '/lun/api/v1.0/clone_test', endpoint='clone_test')
 
 manage_zfs = None
 
