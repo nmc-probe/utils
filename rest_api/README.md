@@ -1,16 +1,13 @@
-REST API
+# REST API
 
-Make the directory where you 
-mkdir /home/nmc_probe_rest
-cd /home/nmc_probe_rest
-virtualenv flask
-./flask/bin/pip install Flask-RESTful-extend==0.3.3
-./flask/bin/pip install rtslib_fb
+Provides a RESTful API using python and flask to creating
+and sharing iSCSI LUNs from ZFS clones and preparing them 
+for use
 
 
-= Install lun_clone =
+# Install lun_clone
 
-== CentOS 7 ==
+## CentOS 7
 
 Clone the repository
 ```bash
