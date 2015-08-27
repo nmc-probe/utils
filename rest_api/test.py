@@ -58,18 +58,16 @@ def main():
     for node_name, initiator in nodes.iteritems():
         wwn = '%s:%s.%s.%s.%s.%s' % (base_iqn, dest_pid, dest_eid, node_name, image_name, image_snapshot)
         initiators = (initiator, prep_initiator)
-        create(fs, port, pool, image_pid, image_name, image_snapshot, dest_pid, dest_eid, node_name, wwn, initiators)
-#        delete(fs, port, pool, image_name, image_snapshot, dest_pid, dest_eid, node_name, wwn)
+#        create(fs, port, pool, image_pid, image_name, image_snapshot, dest_pid, dest_eid, node_name, wwn, initiators)
+        delete(fs, port, pool, image_name, image_snapshot, dest_pid, dest_eid, node_name, wwn)
 
 def create(fs, port, pool, image_pid, image_name, image_snapshot, dest_pid, dest_eid, node_name, wwn, initiators):
     snapshot = '%s/projects/%s/images/%s@%s' % (pool, image_pid, image_name, image_snapshot)
     dest     = '%s/projects/%s/%s/nodes/%s/%s.%s' % (pool, dest_pid, dest_eid, node_name, image_name, image_snapshot)
-    device   = '/dev/zvol/%s' % dest
 
     params = {
-        "snapshot":     snapshot,
-        "dest":         dest,
-        "device":       device,
+        "src":          snapshot,
+        "dst":          dest,
         "wwn":          wwn,
         "initiators":   initiators,
         "createParent": True,
