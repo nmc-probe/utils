@@ -86,7 +86,15 @@ Used to check to see if the API stack is up and running. This endpoint does not 
 Example:
 
 ```bash
-curl -s -k --key /etc/nginx/ssl/client.key --cert /etc/nginx/ssl/client.crt https://localhost/lun/api/v1.0/clone_test
+curl -s -k \
+    --key  /etc/nginx/ssl/client.key \
+    --cert /etc/nginx/ssl/client.crt \
+    https://localhost/lun/api/v1.0/clone_test
+```
+Expected response:
+
+```
+{"status": "ok", "message": "test"}
 ```
 
 ## Endpoint `/lun/api/v1.0/prep`
@@ -144,5 +152,14 @@ Used to check to see if the prep API stack is up and running. This endpoint does
 Example:
 
 ```bash
-curl -s -k --key /etc/nginx/ssl/client.key --cert /etc/nginx/ssl/client.crt https://localhost/lun/api/v1.0/prep_test
+curl -s -k \
+    --key  /etc/nginx/ssl/client.key \
+    --cert /etc/nginx/ssl/client.crt \
+    https://localhost/lun/api/v1.0/prep_test
+```
+
+Expected response:
+
+```
+{"status": "ok", "message": "test"}
 ```
