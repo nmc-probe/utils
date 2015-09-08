@@ -146,6 +146,3 @@ Example:
 ```bash
 curl -s -k --key /etc/nginx/ssl/client.key --cert /etc/nginx/ssl/client.crt https://localhost/lun/api/v1.0/prep_test
 ```
-
-## Endpoint `/lun/api/v1.0/prep_test`
-
