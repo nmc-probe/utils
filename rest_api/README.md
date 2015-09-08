@@ -273,7 +273,7 @@ curl -s -k \
 
 ### Method: POST
 
-Used to check to see if the API stack is up and running. This endpoint does not take any parameters
+Used to check to see if the API stack is up and running. This endpoint does not take any parameters.
 
 Example:
 
