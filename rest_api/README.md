@@ -269,7 +269,7 @@ curl -s -k \
    https://10.57.0.5/lun/api/v1.0/clone
 ```
 
-## Endpoint: /lun/api/v1.0/clone_test
+## Endpoint: `/lun/api/v1.0/clone_test`
 
 ### Method: POST
 
