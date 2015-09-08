@@ -202,3 +202,81 @@ You should see
 ```json
 {"status": "ok", "message": "test"}
 ```
+
+# API
+
+The API was designed for a ZFS + iSCSI backend.
+
+## Endpoint: `/lun/api/v1.0/clone`
+
+### Method: POST
+
+Creates an iSCSI target by creating a clone of a ZFS snapshot, then shares it over iSCSI. It is assumed that the source snapshot is a snapshot of a volume. 
+If the destination clone already exists, then that existing volume will be used for the iSCSI share
+
+<table>
+<tr> <th> Parameter    </th> <th> Required </th> <th> Description </th> </tr>
+<tr> <td> src          </td> <td> yes      </td> <td> Source snapshot for the volume </td> </tr>
+<tr> <td> dst          </td> <td> yes      </td> <td> Destination volume to create </td> </tr>
+<tr> <td> wwn          </td> <td> yes      </td> <td> WWN for the iSCSI target </td> </tr>
+<tr> <td> initiators   </td> <td> yes      </td> <td> Array of WWNs of initiators that are allowed to </td> </tr>
+<tr> <td> createParent </td> <td> no       </td> <td> If set, any parent datasets for the destination will be created, if needed. </td> </tr>
+<tr> <td> properties   </td> <td> no       </td> <td> ZFS properties for the destination clone. If not provided, then the properties will be taken from t </td> </tr>
+</table>
+
+Example
+
+```bash
+curl -s -k \
+   --key /etc/emulab/ssl/client.key \
+   --cert /etc/emulab/ssl/client.crt \
+    -X POST 
+    -H 'Content-Type: application/json' \
+    -d '{"initiators":
+           ["iqn.2014-11.nmc-probe.org:2da412368f",
+            "iqn.2014-11.nmc-probe.org:bf537c5b3f8"],
+         "src": "ns-host/projects/testbed/images/centos70-probe@0001",
+         "dst": "ns-host/projects/myproject/myexperiment/nodes/ns0001/centos70-probe.0001",
+         "createParent": 1,
+         "wwn": "iqn.2014-11.nmc-probe.org:myproject.myexperiment.ns0001.centos70-probe.0001"
+         }' 
+    https://10.57.0.5/lun/api/v1.0/clone
+```
+
+### Method: DELETE
+
+Removes an iSCSI share and optionally deletes the supporting volume.
+
+<table>
+<tr> <th> Parameter    </th> <th> Required </th> <th> Description </th> </tr>
+<tr> <td> dst          </td> <td> yes      </td> <td> Destination volume to delete </td> </tr>
+<tr> <td> wwn          </td> <td> yes      </td> <td> WWN for the target to unshare </td> </tr>
+<tr> <td> deleteClones </td> <td> no       </td> <td> If set, the underlying clone will be deleted </td> </tr>
+</table>
+
+
+Example:
+
+```bash
+curl -s -k \
+   --key /etc/emulab/ssl/client.key \
+   --cert /etc/emulab/ssl/client.crt \
+   -X DELETE \
+   -H 'Content-Type: application/json' \
+   -d '{"dst": "ns-host/projects/myproject/myexperiment/nodes/ns0001/centos70-probe.0001",
+        "deleteClones": 1,
+        "wwn": "iqn.2014-11.nmc-probe.org:myproject.myexperiment.ns0001.centos70-probe.0001"}' \ 
+   https://10.57.0.5/lun/api/v1.0/clone
+```
+
+## Endpoint: /lun/api/v1.0/clone_test
+
+### Method: POST
+
+Used to check to see if the API stack is up and running. This endpoint does not take any parameters
+
+Example:
+
+```bash
+curl -s -k --key /etc/nginx/ssl/client.key --cert /etc/nginx/ssl/client.crt https://localhost/lun/api/v1.0/clone_test
+```
