@@ -17,6 +17,8 @@ The API was designed for a ZFS + iSCSI backend.
 
 ## Endpoint: `/lun/api/v1.0/clone`
 
+Create and delete ZFS clones and share / unshare those clones as iSCSI targets.
+
 ### Method: POST
 
 Creates an iSCSI target by creating a clone of a ZFS snapshot, then shares it over iSCSI. It is assumed that the source snapshot is a snapshot of a volume. 
@@ -29,7 +31,7 @@ If the destination clone already exists, then that existing volume will be used 
 <tr> <td> wwn          </td> <td> yes      </td> <td> WWN for the iSCSI target </td> </tr>
 <tr> <td> initiators   </td> <td> yes      </td> <td> Array of WWNs of initiators that are allowed to </td> </tr>
 <tr> <td> createParent </td> <td> no       </td> <td> If set, any parent datasets for the destination will be created, if needed. </td> </tr>
-<tr> <td> properties   </td> <td> no       </td> <td> ZFS properties for the destination clone. If not provided, then the properties will be taken from t </td> </tr>
+<tr> <td> properties   </td> <td> no       </td> <td> ZFS properties for the destination clone. If not provided, then the properties will be taken from the source snapshot </td> </tr>
 </table>
 
 Example
@@ -117,7 +119,7 @@ Prepares an iSCSI target.
 <tr> <td> ctrl_mac       </td> <td> Yes      </td> <td> MAC address of the control interface </td> </tr>
 <tr> <td> console_port   </td> <td> Yes      </td> <td> Console port. For ttyS0, use 0, for ttyS1, use 1, etc. </td> </tr>
 <tr> <td> console_speed  </td> <td> Yes      </td> <td> Console speed, usually 115200 </td> </tr>
-<tr> <td> console_params </td> <td> Yes      </td> <td> Console params, usuall n1 </td> </tr>
+<tr> <td> console_params </td> <td> Yes      </td> <td> Console params, usually n1 </td> </tr>
 </table>
 
 Example
