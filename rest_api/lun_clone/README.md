@@ -7,7 +7,7 @@ for use.
 # Install and configure nginx
 
 ```bash
-yum install nginx
+yum install epel-release nginx
 mv /etc/nginx/nginx.conf /etc/nginx.conf.orig
 cat << EOF > /etc/nginx/nginx.conf
 # For more information on configuration, see:
