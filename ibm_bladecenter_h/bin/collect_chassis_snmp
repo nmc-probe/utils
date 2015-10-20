@@ -63,7 +63,7 @@ def main():
             lastNode = chassisNum * 14
             firstNode = lastNode - 13
 
-            chassisParams = {'nodeNameFormat': 'na%03d',
+            chassisParams = {'nodeNameFormat': 'na%04d',
                              'chassisNameFormat': 'na-mm-%02d',
                              'host': '10.56.100.%d' % chassisNum, 
                              'num': chassisNum,
