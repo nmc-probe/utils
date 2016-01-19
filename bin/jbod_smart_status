@@ -35,12 +35,15 @@
 #
 # }}}
 
+from nmc_probe.disk import Disk
 from nmc_probe.lsi import LSI
-
-# Turn off all locate LEDs
+import os,sys,getopt,pprint
 
 lsi = LSI()
 
-for num, controller in lsi.controllers.iteritems():
-    for num, enclosure in lsi.enclosures.iteritems():
-        enclosure.clear_locate()
+controllers = lsi.list_controllers()
+
+for controller in controllers:
+    for enclosure_idx, enclosure in controller.enclosures.iteritems():
+        for disk_idx, disk in enclosure.disks.iteritems():
+            print '%s:%s:%s %s smart passed: %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_protocol, disk.smart.passed)

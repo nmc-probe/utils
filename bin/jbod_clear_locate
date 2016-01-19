@@ -35,7 +35,7 @@
 #
 # }}}
 
-# Locate empty bays in all enclosures attached to LSI controllers.
+# Turn off all locate LEDs
 
 from nmc_probe.lsi import LSI
 
@@ -45,4 +45,4 @@ controllers = lsi.list_controllers()
 
 for controller in controllers:
     for enclosure in controller.enclosures:
-        enclosure.locate_empty_bays()
+        enclosure.clear_locate()

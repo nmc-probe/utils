@@ -35,14 +35,15 @@
 #
 # }}}
 
-# Locate empty bays in all enclosures attached to LSI controllers.
-
+from nmc_probe.disk import Disk
 from nmc_probe.lsi import LSI
+import os,sys,getopt,pprint
 
 lsi = LSI()
 
 controllers = lsi.list_controllers()
 
 for controller in controllers:
-    for enclosure in controller.enclosures:
-        enclosure.locate_empty_bays()
+    for enclosure_idx, enclosure in controller.enclosures.iteritems():
+        for disk_idx, disk in enclosure.disks.iteritems():
+            print '%s:%s:%s %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_protocol)
