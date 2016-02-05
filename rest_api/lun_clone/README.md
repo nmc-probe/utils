@@ -145,7 +145,7 @@ yum groupinstall "Development Tools"
 mkdir /home/lun_clone
 cd /home/lun_clone
 virtualenv env
-./env/bin/pip install Flask-RESTful-extend rtslib_fb uwsgi
+./env/bin/pip install Flask-RESTful-extend rtslib_fb uwsgi sqlalchemy sqlalchemy-utils
 ```
 
 Populate virtualenv with required nmc-probe/utils/ files and directories
