@@ -37,7 +37,7 @@
 from flask import Flask
 from flask.ext.restful import Api, Resource, reqparse
 
-from nmc_probe_rest.lun_clone import LUNClone, LUNCloneTest
+from nmc_probe_rest.lun_clone import LUNClone, LUNCloneStatus, LUNCloneTest
 #from nmc_probe_rest.zfs import SnapshotList, VolumeList, FilesystemList, AttributeList, Filesystem, Volume, Snapshot, Clone
 
 app = Flask(__name__)
