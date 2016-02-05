@@ -34,18 +34,23 @@
 #
 # }}}
 
+from nmc_probe_rest.lun_clone import LUNClone, LUNCloneStatus, LUNCloneTest
+from nmc_probe.lun_clone_details import db
 from flask import Flask
 from flask.ext.restful import Api, Resource, reqparse
-
-from nmc_probe_rest.lun_clone import LUNClone, LUNCloneStatus, LUNCloneTest
-#from nmc_probe_rest.zfs import SnapshotList, VolumeList, FilesystemList, AttributeList, Filesystem, Volume, Snapshot, Clone
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-api = Api(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lun_clone.db'
 
+api = Api(app)
 api.add_resource(LUNClone,       '/lun/api/v1.0/clone',        endpoint='clone')
-api.add_resource(LUNCloneStatus, '/lun/api/v1.0/clone_status', endpoint='clone_status')
+api.add_resource(LUNCloneStatus, '/lun/api/v1.0/clone_status/<string:id>', endpoint='clone_status')
 api.add_resource(LUNCloneTest,   '/lun/api/v1.0/clone_test',   endpoint='clone_test')
+
+with app.app_context():
+    db.init_app(app)
+    db.metadata.create_all(db.engine)
 
 manage_zfs = None
 
@@ -62,3 +67,4 @@ if manage_zfs is not None:
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
