@@ -204,6 +204,20 @@ You should see
 {"status": "ok", "message": "test"}
 ```
 
+Watch the log:
+
+```bash
+systemctl restart lun_clone && journalctl -l -u lun_clone -f
+```
+
+Troubleshoot independent of nginx:
+
+```
+export SQLITE_DB=/var/lun_clone/queue.db
+cd /home/lun_clone
+./env/bin/python ./wsgi.py
+```
+
 # Install queue processing service
 
 Install support packages:
@@ -245,4 +259,11 @@ systemctl status lun_queue -l
 Restart and watch the log:
 ```bash
 systemctl restart lun_queue && journalctl -l -u lun_queue -f
+```
+
+Troubleshoot from command line:
+
+```bash
+export SQLITE_DB=/var/lun_clone/queue.db
+/usr/src/nmc-probe/utils/bin/lun_queue
 ```
