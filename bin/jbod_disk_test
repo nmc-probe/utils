@@ -1,0 +1,174 @@
+#!/usr/bin/python
+# Copyright (c) 2015 The New Mexico Consortium
+# 
+# {{{NMC-LICENSE
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+#
+# }}}
+
+from nmc_probe.disk import Disk
+from nmc_probe.lsi import LSI
+import os,sys,getopt,pprint
+
+def main():
+    """
+    Program entry point
+    """
+    options    = read_options()
+
+    lsi = LSI()
+    controllers = lsi.list_controllers()
+
+    if options.get('all', None) is not None:
+        test_all(controllers)
+    elif options.get('dev', None) is not None:
+        test_disk(controllers, options['dev'])
+    else:
+        controller = controllers[options['controller']]
+        enclosure = '%s' % options['enclosure']
+        bay =  options['bay']
+        test_one(controller, enclosure, bay)
+
+# Lots of repeated code, could be dryed up quite a bit, but was in total hack mode
+
+def test_all(controllers):
+    for controller in controllers:
+        for enclosure_idx, enclosure in controller.enclosures.iteritems():
+            for disk_idx, disk in enclosure.disks.iteritems():
+                smart_status = 'passed'
+                if not disk.smart.passed:
+                    smart_status = 'failed'
+                print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_protocol, disk.speed['average'], smart_status)
+
+
+def test_one(controller, enclosure, bay):
+    enclosure = '%s' % enclosure
+    disk = controller.enclosures[enclosure].disks[bay]
+    smart_status = 'passed'
+    if not disk.smart.passed:
+        smart_status = 'failed'
+    print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, enclosure, disk.bay, disk.dev_by_id_protocol, disk.speed['average'], smart_status)
+
+def test_disk(controllers, dev):
+    try:
+        os.stat(dev)
+    except OSError as e:
+        print e
+        sys.exit(1)
+
+    found = None
+    for controller in controllers:
+        for num, disk in controller.disks.iteritems(): 
+            if dev == disk.dev:
+                found = True
+                smart_status = 'passed'
+                if not disk.smart.passed:
+                    smart_status = 'failed'
+                print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, disk.enclosure.index, disk.bay, disk.dev_by_id_protocol, disk.speed['average'], smart_status)
+
+    if found is None:
+        print '%s does not appear to be part of an external JBOD. Maybe this is an onboard disk?' % dev
+ 
+def usage(prog_name):
+    print ('Usage %s [options]' % prog_name)
+    print
+    print ('Test a disk in a JBOD. If no options are supplied, all disks are tested.')
+    print ('Disks are speed tested at the beginning, middle and the end of the disk.')
+    print ('This test can take a long time')
+    print
+    print ('A single disk can be tested using the following options')
+    print
+    print (' --controller=N | -c N\tcontroller index')
+    print (' --enclosure=N | -e N\tenclosure index')
+    print (' --bay=N | -b N\tbay index')
+    print (' --help | -h\tPrint this usage message')
+    print (' --debug=N | -d\tenable debugging')
+    
+def read_options():
+    prog_name = sys.argv[0]
+
+    optlist = None
+    args = None
+
+    options = {}
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'c:e:b:d:h', ['controller=', 'enclosure=', 'bay=', 'dev=', 'help'])
+
+    except getopt.GetoptError as err:
+        print(err)
+        usage(prog_name)
+        sys.exit(0)
+
+    num=None
+
+    # Process the options
+    for (opt,value) in optlist:
+        if opt == '--controller' or opt == '-c':
+            options['controller'] = int(value)
+
+        if opt == '--enclosure' or opt == '-e':
+            options['enclosure'] = int(value)
+
+        if opt == '--bay' or opt == '-b':
+            options['bay'] = int(value)
+
+        if opt == '--dev' or opt == '-d':
+            options['dev'] = value
+
+        if opt == '--help' or opt == '-h':
+            usage(prog_name)
+            sys.exit(0)
+
+
+    # If any one of controller, enclosure or bay options have been provided, then
+    # each of those options must be provided.
+    count = 0
+    single_disk_opts=['controller', 'enclosure', 'bay']
+    for opt in single_disk_opts:
+        if options.has_key(opt):
+            count = count + 1
+
+    if count == 0:
+        if options.get('dev', None) is None:
+            options['all'] = True
+    elif count < 3:
+        print ("When using --controller, --enclosure or --bay, all three of those options must be supplied")
+        usage(prog_name)
+        sys.exit(1)
+
+    return options
+
+# Program entry point
+if __name__ == "__main__":
+    main()
+
