@@ -7,7 +7,9 @@ for use.
 # Install and configure nginx
 
 ```bash
-yum install epel-release nginx
+yum install epel-release nginx python-flask-sqlalchemy python-pip
+pip install sqlalchemy-utils
+
 mv /etc/nginx/nginx.conf /etc/nginx.conf.orig
 cat << EOF > /etc/nginx/nginx.conf
 # For more information on configuration, see:
@@ -140,12 +142,19 @@ git clone https://github.com/nmc-probe/utils.git
 Create the virtualenv
 
 ```bash
+  679  yum install python-flask-sqlalchemy
+  747  pip install sqlalchemy-utils
+  748  yum install python-sqlalchemy-utils
+  749  yum install pip
+  751  yum install python-pip
+  752  pip install sqlalchemy-utils
+
 yum install python-virtualenv
 yum groupinstall "Development Tools"
 mkdir /home/lun_clone
 cd /home/lun_clone
 virtualenv env
-./env/bin/pip install Flask-RESTful-extend rtslib_fb uwsgi
+./env/bin/pip install Flask-RESTful-extend rtslib_fb uwsgi sqlalchemy-utils python-flask-sqlalchemy
 ```
 
 Populate virtualenv with required nmc-probe/utils/ files and directories
