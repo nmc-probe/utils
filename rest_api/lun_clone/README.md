@@ -223,7 +223,12 @@ cd /home/lun_clone
 Install support packages:
 
 ```bash
-pip install sqlalchemy-utils Flask-SQLAlchemy
+mkdir /home/lun_queue
+cd /home/lun_queue
+virtualenv env
+ln -s /usr/src/nmc-probe/utils/site-packages/nmc_probe env/lib/python2.7/site-packages/nmc_probe
+ln -s /usr/src/nmc-probe/utils/site-packages/nmc_probe_rest env/lib/python2.7/site-packages/nmc_probe_rest
+env/bin/pip install sqlalchemy-utils Flask-SQLAlchemy
 ```
 
 Install systemd unit for lun_queue
@@ -236,9 +241,10 @@ After=network.target
 [Service]
 User=root
 Group=root
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
+Environment=VIRTUAL_ENV="/home/lun_queue/env"
+Environment="PATH=$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
 Environment="SQLITE_DB=/var/lun_clone/queue.db"
-ExecStart=/usr/src/nmc-probe/utils/bin/lun_queue
+ExecStart=/home/lun_queue/lun_queue
 
 [Install]
 WantedBy=multi-user.target
