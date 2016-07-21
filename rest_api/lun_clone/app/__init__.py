@@ -1,5 +1,5 @@
 # Copyright (c) 2015 The New Mexico Consortium
-# 
+#
 # {{{NMC-LICENSE
 #
 # All rights reserved.
@@ -34,30 +34,31 @@
 #
 # }}}
 
+from nmc_probe_rest.lun_clone import LUNClone, LUNCloneStatus, LUNCloneTest
+from nmc_probe_rest.lun_clone import LUNCloneRepeat
+from nmc_probe.lun_clone_job import db
 from flask import Flask
 from flask.ext.restful import Api, Resource, reqparse
-
-from nmc_probe_rest.lun_clone import LUNClone, LUNCloneTest
-#from nmc_probe_rest.zfs import SnapshotList, VolumeList, FilesystemList, AttributeList, Filesystem, Volume, Snapshot, Clone
+from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = \
+    'sqlite:///%s' % os.environ['SQLITE_DB']
+
 api = Api(app)
+api.add_resource(LUNClone, '/lun/api/v1.0/clone',
+                 endpoint='clone')
+api.add_resource(LUNCloneStatus, '/lun/api/v1.0/clone_status/<string:id>',
+                 endpoint='clone_status')
+api.add_resource(LUNCloneTest, '/lun/api/v1.0/clone_test',
+                 endpoint='clone_test')
+api.add_resource(LUNCloneRepeat, '/lun/api/v1.0/clone_repeat',
+                 endpoint='clone_repeat')
 
-api.add_resource(LUNClone,     '/lun/api/v1.0/clone',      endpoint='clone')
-api.add_resource(LUNCloneTest, '/lun/api/v1.0/clone_test', endpoint='clone_test')
-
-manage_zfs = None
-
-if manage_zfs is not None:
-    api.add_resource(SnapshotList,   '/zfs/api/v1.0/snapshots',   endpoint='snapshots')
-    api.add_resource(VolumeList,     '/zfs/api/v1.0/volumes',     endpoint='volumes')
-    api.add_resource(FilesystemList, '/zfs/api/v1.0/filesystems', endpoint='filesystems')
-    api.add_resource(AttributeList,  '/zfs/api/v1.0/attributes',  endpoint='attributes')
-
-    api.add_resource(Filesystem, '/zfs/api/v1.0/filesystem',  endpoint='filesystem')
-    api.add_resource(Volume,     '/zfs/api/v1.0/volume',      endpoint='volume')
-    api.add_resource(Snapshot,   '/zfs/api/v1.0/snapshot',    endpoint='snapshot')
-    api.add_resource(Clone,      '/zfs/api/v1.0/clone',       endpoint='clone')
+with app.app_context():
+    db.init_app(app)
+    db.metadata.create_all(db.engine)
 
 if __name__ == '__main__':
     app.run(debug=True)

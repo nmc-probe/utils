@@ -179,6 +179,7 @@ After=network.target
 User=root
 Group=root
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
+Environment="SQLITE_DB=/var/lun_clone/queue.db"
 WorkingDirectory=/home/lun_clone
 ExecStart=/home/lun_clone/env/bin/uwsgi --ini=./config.ini
 
@@ -190,6 +191,7 @@ EOF
 Start and enable lun_clone
 
 ```bash
+mkdir -p /var/lun_clone
 systemctl start lun_clone
 systemctl enable lun_clone
 ```
@@ -209,4 +211,74 @@ You should see
 
 ```json
 {"status": "ok", "message": "test"}
+```
+
+Watch the log:
+
+```bash
+systemctl restart lun_clone && journalctl -l -u lun_clone -f
+```
+
+Troubleshoot independent of nginx:
+
+```
+export SQLITE_DB=/var/lun_clone/queue.db
+cd /home/lun_clone
+./env/bin/python ./wsgi.py
+```
+
+# Install queue processing service
+
+Install support packages:
+
+```bash
+mkdir /home/lun_queue
+cd /home/lun_queue
+virtualenv env
+ln -s /usr/src/nmc-probe/utils/site-packages/nmc_probe env/lib/python2.7/site-packages/nmc_probe
+ln -s /usr/src/nmc-probe/utils/site-packages/nmc_probe_rest env/lib/python2.7/site-packages/nmc_probe_rest
+env/bin/pip install sqlalchemy-utils Flask-SQLAlchemy
+```
+
+Install systemd unit for lun_queue
+```bash
+cat << EOF > /etc/systemd/system/lun_queue.service
+[Unit]
+Description=LUN clone queue processing
+After=network.target
+
+[Service]
+User=root
+Group=root
+Environment=VIRTUAL_ENV="/home/lun_queue/env"
+Environment="PATH=$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
+Environment="SQLITE_DB=/var/lun_clone/queue.db"
+ExecStart=/home/lun_queue/lun_queue
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Start and enable lun_queue
+
+```bash
+systemctl start lun_queue
+systemctl enable lun_queue
+```
+Verify that the process_queue is running
+```bash
+systemctl status lun_queue -l
+```
+
+Restart and watch the log:
+```bash
+systemctl restart lun_queue && journalctl -l -u lun_queue -f
+```
+
+Troubleshoot from command line:
+
+```bash
+export SQLITE_DB=/var/lun_clone/queue.db
+/usr/src/nmc-probe/utils/bin/lun_queue
 ```

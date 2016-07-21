@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!/usr/bin/python
 # Copyright (c) 2015 The New Mexico Consortium
 # 
 # {{{NMC-LICENSE
@@ -35,15 +35,28 @@
 #
 # }}}
 
+# Process the lun clone job queue
+
+from nmc_probe.lun_queue import LUNQueue
+from nmc_probe.lun_clone_job import db
 from flask import Flask
-from flask.ext.restful import Api, Resource, reqparse
+from flask_sqlalchemy import SQLAlchemy
+import time, os
 
-from nmc_probe_rest.lun_prep import LUNPrepREST
+def run_forever():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///%s' % os.environ['SQLITE_DB']
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app = Flask(__name__)
-api = Api(app)
+    with app.app_context():
+        db.init_app(app)
+        db.metadata.create_all(db.engine)
+        queue = LUNQueue()
 
-api.add_resource(LUNPrepREST, '/lun/api/v1.0/prep',  endpoint='prep')
+        while True:
+            queue.process()
+            time.sleep(1)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    run_forever()
+    
