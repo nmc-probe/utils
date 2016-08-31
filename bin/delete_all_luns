@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Get list of zfs zvols to delete
+zvols=$(targetcli ls /backstores/block | grep "/dev/zvol" | awk '{print $3}' | sed -e "s:^\[/dev/zvol/::g" | xargs)
+
+# Get list of LUNs to delete
+luns=$(targetcli ls | grep iqn | grep "TPGs"| awk '{print $3}') 
+
+
+for lun in $luns ; do
+   targetcli /iscsi delete $lun 
+   targetcli /backstores/block/ delete $lun
+done
+
+for zvol in $zvols ; do
+   echo $zvol
+   zfs destroy $zvol
+done
+
+echo "restarting lun_queue service"
+systemctl restart lun_queue
+echo "restarting lun_clone service"
+systemctl restart lun_clone
