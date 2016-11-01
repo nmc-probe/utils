@@ -45,8 +45,8 @@ Return:
 
 <table>
 <tr> <th> Parameter    </th> <th> Description </th> </tr>
-<tr> <td> status       </tr> <tr> "ok" or "error" </td> </tr>
-<tr> <td> job_id       </tr> <tr> The uuid for this job. </td> </tr>
+<tr> <td> status       </td> <td> "ok" or "error" </td> </tr>
+<tr> <td> job_id       </td> <td> The uuid for this job. </td> </tr>
 </table>
 
 Example
