@@ -1,4 +1,4 @@
-# REST API for Creating and Preparing Clones
+# REST API for Creating Clones and iSCSI Targets
 
 Provides a RESTful API using python and flask to creating
 and sharing iSCSI LUNs from ZFS clones and preparing them
@@ -7,19 +7,18 @@ for use.
 There are two major functions provided:
 
 * Clone
-* Prep
+* Clone status
 
-The clone functionality creates ZFS clones from snapshots and shares those cloned volumes over iSCSI. The prep function prepares those targets for use by doing things like setting the initiator name, hostname, and console parameters.
+The clone endpoint starts the creation or deletion of a set of clones and
+shares those clones via iSCSI. The clone_status function reports back the
+status of the clone creation / deletion job.
 
-# API
 
-The API was designed for a ZFS + iSCSI backend.
-
-## Endpoint: `/lun/api/v1.0/clone`
+# Endpoint: `/lun/api/v1.0/clone`
 
 Create and delete ZFS clones and share / unshare those clones as iSCSI targets.
 
-### Method: POST
+## Method: POST
 
 Begins the creation of a set of iSCSI targets. Returns the job id and a status.
 If the destination clones already exist, then they will be re-used.
@@ -64,7 +63,7 @@ curl -s -k \
 {"status": "ok", "job_id": "6457624d-da51-426b-a719-008f106f7ab2"}
 ```
 
-### Method: DELETE
+## Method: DELETE
 
 Removes an iSCSI share and optionally deletes the supporting volume.
 
@@ -93,11 +92,11 @@ curl -s -k \
 {"status": "ok", "job_id": "b80f26d6-25cb-4638-95ea-dd9272b020cd"}
 ```
 
-## Endpoint: `/lun/api/v1.0/clone_status/[job_id]`
+# Endpoint: `/lun/api/v1.0/clone_status/[job_id]`
 
 Reports the status of a clone / target creation job.
 
-### Method: GET
+## Method: GET
 
 ```
 curl -s -k \
@@ -120,9 +119,9 @@ curl -s -k \
  "job_time": 3.652129}
 ```
 
-## Endpoint: `/lun/api/v1.0/clone_test`
+# Endpoint: `/lun/api/v1.0/clone_test`
 
-### Method: POST
+## Method: POST
 
 Used to check to see if the API stack is up and running. This endpoint does not take any parameters.
 
