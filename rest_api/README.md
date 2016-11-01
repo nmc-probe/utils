@@ -4,19 +4,24 @@ Provides a RESTful API using python and flask to creating
 and sharing iSCSI LUNs from ZFS clones and preparing them
 for use.
 
-There are two major functions provided:
+There are three endpoints:
 
-* Clone
-* Clone status
+* clone
+* clone_status
+* clone_test
 
-The clone endpoint starts the creation or deletion of a set of clones and
-shares those clones via iSCSI. The clone_status function reports back the
-status of the clone creation / deletion job.
-
+The `clone` endpoint starts the creation or deletion of a set of clones and
+shares those clones via iSCSI. The `clone_status` function reports back the
+status of the clone creation / deletion job. `clone_test` is no-op function
+that is provided to sysadmins to check to see if the REST API is available.
 
 # Endpoint: `/lun/api/v1.0/clone`
 
-Create and delete ZFS clones and share / unshare those clones as iSCSI targets.
+This endpoint starts a job to create and delete disk clones and share / unshare
+those clones as iSCSI targets.
+
+This endpoint returns immediately and before the clones are created or deleted.
+To check the status of the job, use the clone_status endpoint.
 
 ## Method: POST
 
