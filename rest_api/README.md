@@ -61,8 +61,8 @@ curl -s -k \
           {"initiators": ["iqn.2014-11.nmc-probe.org:666cf3f7545"],
            "src": "na-jbod-02-p01/projects/testbed/images/centos72-probe@1",
            "dst": "na-jbod-02-p01/projects/testbed/yat/nodes/nodea.centos72-probe.0001",
-           "wwn": "iqn.2014-11.nmc-probe.org:testbed.yat.nodea.centos72-probe.0001"}]}' \
            "createParent": 1,
+           "wwn":"iqn.2014-11.nmc-probe.org:testbed.yat.nodea.centos72-probe.0001"}]}' \
    https://10.55.0.11/lun/api/v1.0/clone
 
 {"status": "ok", "job_id": "6457624d-da51-426b-a719-008f106f7ab2"}
@@ -99,9 +99,11 @@ curl -s -k \
 
 # Endpoint: `/lun/api/v1.0/clone_status/[job_id]`
 
-Reports the status of a clone / target creation job.
+Reports the status of a clone / target creation / deletion job.
 
 ## Method: GET
+
+Example:
 
 ```
 curl -s -k \
