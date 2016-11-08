@@ -42,24 +42,27 @@
 import os
 import sys
 import getopt
+import random
 
 from nmc_probe.log import Log
 from nmc_probe.nanek import Chassis
-from diskless.db import NewNode, NewInterface
+from diskless.db import NewNode
+from diskless.db import NewInterface
+from diskless.db import db
 
 
 def main():
     """
     Program entry point
     """
-    options = readOptions()
+    options = read_options()
     chassis_num = options['chassis']
 
     last_node = chassis_num * 14
     first_node = last_node - 13
 
     chassisParams = {'nodeNameFormat': 'na%04d',
-                     'chassisNameFormat': 'na-mm-%02d',
+                     'chassisNameFormat': 'na-mm%02d',
                      'host': '10.56.100.%d' % chassis_num,
                      'num': chassis_num,
                      'firstNode': first_node,
@@ -69,7 +72,7 @@ def main():
     chassis = Chassis(chassisParams)
     mac_list = chassis.collectMac()
 
-    print mac_list
+    iscsi_servers = ['na-jbod-01', 'na-jbod-02']
 
     for intf_num in range(1):
         intf = 'eth%d' % intf_num
@@ -78,19 +81,41 @@ def main():
 
             if new_intf is not None:
                 node_num = first_node + int(slot) - 1
+                print node_num
                 fourth_octet = node_num % 256
+                print fourth_octet
                 third_octet = 1 + int(node_num / 256)
-
+                print third_octet
+                node_id = chassisParams['nodeNameFormat'] % node_num
                 new_intf.new_node.IP = '10.55.%d.%d' % \
                     (third_octet, fourth_octet)
-                new_intf.new_node.node_id = chassisParams['nodeNameFormat'] % \
-                    node_num
+                new_intf.new_node.node_id = node_id
                 new_intf.new_node.type = 'nanek'
                 new_intf.new_node.save()
                 print new_intf.new_node
 
+                iscsi_server = iscsi_servers[node_num % 2]
+                initiator_name = iscsi_iname()
 
-def usage(progName):
+                db.add_node_attribute(node_id, 'iscsi_server', iscsi_server)
+                db.add_node_attribute(node_id, 'initiator_name',
+                                      initiator_name)
+
+
+def iscsi_iname():
+    prefix = 'iqn.2014-11.nmc-probe.org:'
+    iname = [
+        random.randint(0x00, 0xff),
+        random.randint(0x00, 0xff),
+        random.randint(0x00, 0xff),
+        random.randint(0x00, 0xff),
+        random.randint(0x00, 0xff),
+        random.randint(0x00, 0xff)
+        ]
+    return prefix + ''.join(map(lambda x: "%02x" % x, iname))
+
+
+def usage(prog_name):
     print ('Usage %s [options]')
     print ('Gather mac addresses for a chassis')
     print
@@ -99,8 +124,8 @@ def usage(progName):
     print (' --help | -h\tPrint this usage message')
 
 
-def readOptions():
-    progName = sys.argv[0]
+def read_options():
+    prog_name = sys.argv[0]
 
     optlist = None
     args = None
@@ -110,11 +135,11 @@ def readOptions():
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'c:s:d:h',
                                       ['debug=', 'cycle', 'state', 'on', 'off',
-                                       'chassis=', 'slot=', 'help'])
+                                      'chassis=', 'slot=', 'help'])
 
     except getopt.GetoptError as err:
         print(err)
-        usage(progName)
+        usage(prog_name)
         sys.exit(0)
 
     num = None
@@ -125,14 +150,14 @@ def readOptions():
             options['chassis'] = int(value)
 
         if opt == '--help' or opt == '-h':
-            usage(progName)
+            usage(prog_name)
             sys.exit(0)
 
         if opt == '--debug' or opt == '-d':
             Log.debugLevel = int(value)
 
     if 'chassis' not in options:
-        usage(progName)
+        usage(prog_name)
         sys.exit(0)
 
     return options
