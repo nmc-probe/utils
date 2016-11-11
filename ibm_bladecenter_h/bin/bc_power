@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (c) 2015 The New Mexico Consortium
 # 
@@ -101,7 +101,10 @@ def usage(progName):
     print 
     print (' --ch=N | -c N\tPower cycles slots in chassis N.')
     print ('    If --slot or -s not specified, then all slots are power cycled')
-    print (' --slot=N | -s N\tPower cycle the specified slot in the chassis. Requires -ch or -c')
+    print (' --slot=N | -s N\tthe specified slot in the chassis. Requires -ch or -c')
+    print (' --cycle\t\tPower cycle')
+    print (' --on\t\tPower on')
+    print (' --off\t\tPower off')
     print (' --debug=N | -d N\tSet the debug log level')
     print (' --help | -h\tPrint this usage message')
     
