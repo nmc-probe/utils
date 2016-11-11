@@ -72,7 +72,7 @@ def main():
     chassis = Chassis(chassisParams)
     mac_list = chassis.collectMac()
 
-    iscsi_servers = ['na-jbod-01', 'na-jbod-02']
+    iscsi_servers = ['na-iscsi-01', 'na-iscsi-02']
 
     for intf_num in range(1):
         intf = 'eth%d' % intf_num
@@ -90,7 +90,7 @@ def main():
                 new_intf.new_node.IP = '10.55.%d.%d' % \
                     (third_octet, fourth_octet)
                 new_intf.new_node.node_id = node_id
-                new_intf.new_node.type = 'nanek'
+                new_intf.new_node.type = 'ibm_bch_ls21'
                 new_intf.new_node.save()
                 print new_intf.new_node
 
