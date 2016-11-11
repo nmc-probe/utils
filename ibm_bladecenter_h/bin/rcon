@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# Connect to an IBM BCH console
+#
+# Set up AMM with:
+#
+# env -T mm[1]
+# accseccfg -ct 0
+# users -2 -n console -ap none -a rbs:brp:b1|b2|b3|b4|b5|b6|b7|b8|b9|b10|b11|b12|b13|b14 -p pick_a_good_password
+# users -2 -pk -add ssh-dss AAAAB3NzaC1kc3MAAACBAPTFnNCMeU1SNbF5eUoOM246T2TlmZfjg6M1A8hd93ppv0lrV+5KrhS64puhrZ2w0rzxLtaRckNv8p1dbtoxfFx7FK3Ho//gXk+2QFFjPZWbCvPj3ccoRRjQYO8iulD4QvjsU/D0Qd0azTCq6T8F3jKYdRbMuCxraUYU/TOI5G6dAAAAFQDcsO7BVPiLkqrNJeKrraeYZDp4twAAAIEAz1troJCQIZqsLzDY99Lsafq4cbMF2dxgKqEImuH1WpJLYE7ep/JU3Jcc4hKjqNsZl1FplYE6kM96zcrlsytMzZd0jFIKqfmm3qyETjBWcc0jbhAnUBAnr0U6uC4TI9EHU2Q3KpR0l30kN0Q9AqqkCb4Nwj75bTRw7h70zYlkTH4AAACBAOi9bEhKIOl88aEiLxnjG67euWasi73aE13tdBR2J2VR/vRYLa11Pk8Htn9aFg2Bq350Yc1HB2+f0CcX9x+VveTQCJeAAZvBW5UEl/GpGJITzCI4NndYQFxnz+HhNuSO1GXmJGxmGHFKEEY+jLslq3nDqPAKxuwGLF2RRdrYX/KS
+
+import sys, os, subprocess
+
+# Username to ssh to the AMM on the blade center
+username='console'
+
+# Private key. 
+identity='/usr/local/etc/.ssh/console'
+
+# SSH command
+ssh_cmd='/usr/bin/ssh'
+
+# Number of blades per chassis
+blades_per_chassis = 14
+
+# First three octets of the AMM's IP
+first_three_octets = '10.56.100'
+
+#
+# Program usage
+#
+def usage(prog_name):
+    '''Print out program usage'''
+    print ('%s [num]' % prog_name)
+    print ('')
+    print ('Connect to console on node [num]')
+
+if len(sys.argv) < 2:
+    usage(sys.argv[0])
+    sys.exit(1)
+
+# Get the node number from the command line
+node_number = int(sys.argv[1])
+
+# chassis number
+chassis_number = int(node_number / blades_per_chassis)
+
+# Get the blade number
+blade_number = node_number % blades_per_chassis
+
+# No such blade as blade 0, that's actually blade 14.
+if blade_number == 0:
+    blade_number = 14
+else:
+    chassis_number = chassis_number + 1
+
+print('chassis_number: %d' % chassis_number)
+print('blade_number: %d' % blade_number)
+
+ip = '%s.%d' % (first_three_octets, chassis_number)
+
+ssh = [ssh_cmd, '-i', identity, '%s@%s' % (username, ip), 'console -T blade[%d]' % blade_number]
+
+print ('ssh: %s' % ssh)
+
+subprocess.check_call(ssh)
+
