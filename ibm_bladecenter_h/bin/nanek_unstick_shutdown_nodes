@@ -1,0 +1,8 @@
+#!/usr/local/bin/bash
+
+nodes=$(echo "select node_id from (select n.node_id, n.eventstate, (unix_timestamp(now()) - n.state_timestamp) as time_in_shutdown from nodes as n left join nodes as np on np.node_id=n.phys_nodeid left join node_types as nt on n.type=nt.type left join reserved as r on r.node_id=n.node_id left join reserved as rp on rp.node_id=n.phys_nodeid where (n.role='testnode') and (nt.class!='shark' and nt.class!='pcRemote' and nt.class!='pcplabphys') and r.pid is null and rp.pid is null and n.reserved_pid is null and np.reserved_pid is null and n.eventstate = 'SHUTDOWN') as t1 where time_in_shutdown > 300" | mysql tbdb | grep -v ^node_id | xargs)
+
+if [ ! -z "$nodes" ] ; then
+    wap power cycle $nodes
+fi
+
