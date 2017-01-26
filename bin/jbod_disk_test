@@ -67,7 +67,7 @@ def test_all(controllers):
                 smart_status = 'passed'
                 if not disk.smart.passed:
                     smart_status = 'failed'
-                print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_protocol, disk.speed['average'], smart_status)
+                print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_wwn, disk.speed['average'], smart_status)
 
 
 def test_one(controller, enclosure, bay):
@@ -76,7 +76,7 @@ def test_one(controller, enclosure, bay):
     smart_status = 'passed'
     if not disk.smart.passed:
         smart_status = 'failed'
-    print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, enclosure, disk.bay, disk.dev_by_id_protocol, disk.speed['average'], smart_status)
+    print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, enclosure, disk.bay, disk.dev_by_id_wwn, disk.speed['average'], smart_status)
 
 def test_disk(controllers, dev):
     try:
@@ -93,7 +93,7 @@ def test_disk(controllers, dev):
                 smart_status = 'passed'
                 if not disk.smart.passed:
                     smart_status = 'failed'
-                print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, disk.enclosure.index, disk.bay, disk.dev_by_id_protocol, disk.speed['average'], smart_status)
+                print '%s:%s:%s %s speed: %.2f smart %s' % (controller.index, disk.enclosure.index, disk.bay, disk.dev_by_id_wwn, disk.speed['average'], smart_status)
 
     if found is None:
         print '%s does not appear to be part of an external JBOD. Maybe this is an onboard disk?' % dev

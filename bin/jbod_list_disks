@@ -46,4 +46,4 @@ controllers = lsi.list_controllers()
 for controller in controllers:
     for enclosure_idx, enclosure in controller.enclosures.iteritems():
         for disk_idx, disk in enclosure.disks.iteritems():
-            print '%s:%s:%s %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_protocol)
+            print '%s:%s:%s %s' % (controller.index, enclosure.index, disk.bay, disk.dev_by_id_wwn)
